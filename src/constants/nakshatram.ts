@@ -1,0 +1,32 @@
+/** The 27 Nakshatras (birth stars), used in the sign-up form. */
+export const NAKSHATRAMS = [
+  'Ashwini',
+  'Bharani',
+  'Kruthika',
+  'Rohini',
+  'Mrughasira',
+  'Aarudra',
+  'Punarvasu',
+  'Pushya',
+  'Ashlesha',
+  'Maka',
+  'Purva Phalguni',
+  'Uttara Phalguni',
+  'Hasta',
+  'Chita',
+  'Swathi',
+  'Vishakha',
+  'Anuradha',
+  'Jyeshtha',
+  'Mula',
+  'Purva Ashadha',
+  'Uttara Ashadha',
+  'Sravana',
+  'Dhanishta',
+  'Shatabhisha',
+  'Purvabhadra',
+  'Uttarabhadra',
+  'Revati',
+] as const;
+
+export type Nakshatram = (typeof NAKSHATRAMS)[number];
