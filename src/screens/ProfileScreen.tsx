@@ -4,6 +4,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -20,8 +21,12 @@ import {
   X,
   LogOut,
   WifiOff,
+  FileText,
+  ShieldCheck,
+  ChevronRight,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import {
   Banner,
@@ -37,6 +42,9 @@ import { colors } from '../constants/theme';
 import { formatMobile } from '../utils/format';
 import { useProfile } from '../hooks/useProfile';
 import { AdBanner } from '../components/ads/AdBanner';
+import type { ProfileStackParamList } from '../navigation/AppNavigator';
+
+type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileMain'>;
 
 function DetailRow({
   icon: Icon,
@@ -73,7 +81,30 @@ function getInitials(fullName?: string): string {
   return (first + last).toUpperCase() || 'D';
 }
 
-export function ProfileScreen() {
+/** A tappable row that navigates to a legal document. */
+function LegalRow({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className="flex-row items-center gap-3 py-3.5 active:opacity-60"
+    >
+      <IconChip icon={Icon} />
+      <Text className="flex-1 text-base font-medium text-gray-900">{label}</Text>
+      <ChevronRight size={18} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
+export function ProfileScreen({ navigation }: Props) {
   const {
     user,
     loading,
@@ -270,6 +301,24 @@ export function ProfileScreen() {
             </Card>
 
             <SevaStatusCard />
+
+            <Card title="Legal & Policies">
+              <LegalRow
+                icon={FileText}
+                label="Terms & Conditions"
+                onPress={() =>
+                  navigation.navigate('Legal', { document: 'terms' })
+                }
+              />
+              <View className="h-px bg-gray-100" />
+              <LegalRow
+                icon={ShieldCheck}
+                label="Privacy Policy"
+                onPress={() =>
+                  navigation.navigate('Legal', { document: 'privacy' })
+                }
+              />
+            </Card>
 
             <Button
               label="Edit Profile"

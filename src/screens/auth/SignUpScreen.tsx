@@ -10,12 +10,14 @@ import {
   Eye,
   EyeOff,
   UserPlus,
+  Check,
 } from 'lucide-react-native';
 
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { Button, Input, Select } from '../../components/ui';
 import { NAKSHATRAMS } from '../../constants/nakshatram';
+import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { signUpSchema, validate } from '../../validation/authValidation';
 
@@ -45,18 +47,27 @@ export function SignUpScreen({ navigation }: Props) {
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [agreeError, setAgreeError] = useState(false);
 
   const setField = (key: keyof FormState) => (value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
+  const toggleAgree = () => {
+    setAgreed(v => !v);
+    setAgreeError(false);
+  };
+
   const onSubmit = async () => {
     clearError();
     const result = validate(signUpSchema, form);
-    if (!result.success) {
-      setErrors(result.errors);
-      return;
-    }
+    // Surface both the field errors and the agreement error together.
+    if (!result.success) setErrors(result.errors);
+    if (!agreed) setAgreeError(true);
+    if (!result.success || !agreed) return;
+
     setErrors({});
+    setAgreeError(false);
     await signUp(result.data);
     // On success the RootNavigator swaps to the app stack automatically.
   };
@@ -129,6 +140,57 @@ export function SignUpScreen({ navigation }: Props) {
         onChangeText={setField('confirmPassword')}
         error={errors.confirmPassword}
       />
+
+      {/* Required agreement */}
+      <View className="mt-1">
+        <View className="flex-row items-start gap-2.5">
+          <Pressable
+            onPress={toggleAgree}
+            hitSlop={6}
+            className="mt-0.5"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agreed }}
+            accessibilityLabel="I agree to the Terms & Conditions and Privacy Policy"
+          >
+            <View
+              className={`h-5 w-5 items-center justify-center rounded-md border-2 ${
+                agreed
+                  ? 'border-primary bg-primary'
+                  : agreeError
+                    ? 'border-red-400 bg-white'
+                    : 'border-gray-300 bg-white'
+              }`}
+            >
+              {agreed && <Check size={13} color={colors.white} strokeWidth={3} />}
+            </View>
+          </Pressable>
+
+          <Text className="flex-1 text-sm leading-5 text-gray-600">
+            <Text onPress={toggleAgree}>I agree to the </Text>
+            <Text
+              className="font-semibold text-primary"
+              onPress={() => navigation.navigate('Legal', { document: 'terms' })}
+            >
+              Terms &amp; Conditions
+            </Text>
+            <Text onPress={toggleAgree}> and </Text>
+            <Text
+              className="font-semibold text-primary"
+              onPress={() => navigation.navigate('Legal', { document: 'privacy' })}
+            >
+              Privacy Policy
+            </Text>
+            <Text onPress={toggleAgree}>.</Text>
+          </Text>
+        </View>
+
+        {agreeError && (
+          <Text className="ml-7 mt-1.5 text-xs text-red-500">
+            Please accept the Terms &amp; Conditions and Privacy Policy to
+            continue.
+          </Text>
+        )}
+      </View>
 
       <Button
         className="mt-2"

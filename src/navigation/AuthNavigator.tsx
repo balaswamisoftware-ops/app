@@ -4,15 +4,26 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
 import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '../screens/auth/ResetPasswordScreen';
+import { LegalScreen } from '../screens/LegalScreen';
+import { LEGAL_DOCUMENTS, type LegalDocumentId } from '../constants/legal';
+import { colors } from '../constants/theme';
 
 export type AuthStackParamList = {
   Login: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
   ResetPassword: { mobile: string; fullName: string };
+  Legal: { document: LegalDocumentId };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
+
+const legalHeader = {
+  headerStyle: { backgroundColor: colors.surface },
+  headerTintColor: colors.textPrimary,
+  headerTitleStyle: { fontWeight: '700' as const, color: colors.textPrimary },
+  headerShadowVisible: false,
+};
 
 /** Stack shown when the user is not authenticated. */
 export function AuthNavigator() {
@@ -22,6 +33,15 @@ export function AuthNavigator() {
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <Stack.Screen
+        name="Legal"
+        component={LegalScreen}
+        options={({ route }) => ({
+          headerShown: true,
+          ...legalHeader,
+          title: LEGAL_DOCUMENTS[route.params.document].title,
+        })}
+      />
     </Stack.Navigator>
   );
 }

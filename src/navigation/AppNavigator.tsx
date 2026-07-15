@@ -8,6 +8,8 @@ import { ChantingScreen } from '../screens/ChantingScreen';
 import { ChantHistoryScreen } from '../screens/ChantHistoryScreen';
 import { DonationScreen } from '../screens/DonationScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { LegalScreen } from '../screens/LegalScreen';
+import { LEGAL_DOCUMENTS, type LegalDocumentId } from '../constants/legal';
 import { colors } from '../constants/theme';
 
 // The ad banner now scrolls inline at the top of each screen's content
@@ -20,6 +22,12 @@ export type HomeStackParamList = {
   Donation: undefined;
 };
 
+/** Stack inside the Profile tab (profile -> terms / privacy). */
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  Legal: { document: LegalDocumentId };
+};
+
 /** Param list for the main bottom-tab navigator (Home · History · Profile). */
 export type AppTabParamList = {
   HomeTab: undefined;
@@ -28,6 +36,7 @@ export type AppTabParamList = {
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
+const ProfileStackNav = createNativeStackNavigator<ProfileStackParamList>();
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
 /** Clean, neutral header — white background, dark title, no accent fill. */
@@ -57,6 +66,26 @@ function HomeStack() {
         options={{ title: '₹216 Seva Donation' }}
       />
     </Stack.Navigator>
+  );
+}
+
+/** Stack for the Profile tab so it can push the Terms / Privacy pages. */
+function ProfileStack() {
+  return (
+    <ProfileStackNav.Navigator screenOptions={neutralHeader}>
+      <ProfileStackNav.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{ title: 'My Profile' }}
+      />
+      <ProfileStackNav.Screen
+        name="Legal"
+        component={LegalScreen}
+        options={({ route }) => ({
+          title: LEGAL_DOCUMENTS[route.params.document].title,
+        })}
+      />
+    </ProfileStackNav.Navigator>
   );
 }
 
@@ -95,11 +124,8 @@ export function AppNavigator() {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileStack}
         options={{
-          headerShown: true,
-          ...neutralHeader,
-          title: 'My Profile',
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
