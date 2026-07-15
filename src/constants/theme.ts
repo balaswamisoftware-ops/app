@@ -1,5 +1,5 @@
 /**
- * Sri Vidya Peetham brand tokens for use in JS/TS (icon colors, native props
+ * Sri Vidya Peetam brand tokens for use in JS/TS (icon colors, native props
  * like StatusBar / Switch that don't accept NativeWind classes). Keep these in
  * sync with `tailwind.config.js`.
  */

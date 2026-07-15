@@ -64,7 +64,7 @@ export function SignUpScreen({ navigation }: Props) {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Register as a devotee of Sri Vidya Peetham"
+      subtitle="Register as a devotee of Sri Vidya Peetam"
       error={error}
     >
       <Input

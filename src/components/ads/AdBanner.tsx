@@ -21,27 +21,41 @@ if (ADS_AVAILABLE) {
 export interface AdBannerProps {
   /** Override the ad-unit id; defaults to config (or a test id). */
   unitId?: string;
+  /**
+   * 'anchored' (default) → full-width adaptive banner.
+   * 'square'  → 300×250 medium rectangle (AdMob's closest to a 1:1 square;
+   *             there is no exact 1:1 banner size).
+   */
+  size?: 'anchored' | 'square';
   className?: string;
 }
 
 /**
- * An adaptive AdMob banner. Renders nothing if the native module isn't present
- * (i.e. before a rebuild) or if ads aren't configured yet.
+ * An AdMob banner. Renders nothing if the native module isn't present (i.e.
+ * before a rebuild) or if ads aren't configured yet.
  */
-export function AdBanner({ unitId, className }: AdBannerProps) {
+export function AdBanner({ unitId, size = 'anchored', className }: AdBannerProps) {
   if (!ADS_AVAILABLE) return null;
+
+  const square = size === 'square';
 
   // Debug builds ALWAYS use Google test ads (safe to view/click). Real ad units
   // are only used in production/release builds.
   const id = __DEV__
-    ? TestIds.ADAPTIVE_BANNER
+    ? square
+      ? TestIds.MEDIUM_RECTANGLE ?? TestIds.ADAPTIVE_BANNER
+      : TestIds.ADAPTIVE_BANNER
     : unitId || AD_UNITS.banner || TestIds.ADAPTIVE_BANNER;
 
   return (
-    <View className={cn('items-center border-t border-gray-100 bg-white', className)}>
+    <View className={cn('items-center justify-center bg-white', className)}>
       <BannerAd
         unitId={id}
-        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        size={
+          square
+            ? BannerAdSize.MEDIUM_RECTANGLE
+            : BannerAdSize.ANCHORED_ADAPTIVE_BANNER
+        }
         requestOptions={{ requestNonPersonalizedAdsOnly: true }}
       />
     </View>

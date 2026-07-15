@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertCircle } from 'lucide-react-native';
 import { colors } from '../../constants/theme';
+import { logoImage } from '../../assets/logo';
 
 interface AuthLayoutProps {
   title: string;
@@ -36,13 +38,12 @@ export function AuthLayout({ title, subtitle, error, children }: AuthLayoutProps
         >
           {/* Brand header */}
           <View className="mb-8 items-center">
-            <View className="mb-3 h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-              <Text className="text-3xl">🪔</Text>
-            </View>
-            <Text className="text-xl font-bold text-gray-900">
-              శ్రీ విద్యా పీఠం
-            </Text>
-            <Text className="text-sm text-gray-500">Sri Vidya Peetham</Text>
+            <Image
+              source={logoImage}
+              resizeMode="contain"
+              className="mb-3 h-32 w-32 rounded-2xl"
+            />
+            <Text className="text-sm text-gray-500">Sri Vidya Peetam</Text>
           </View>
 
           <Text className="text-2xl font-bold text-gray-900">{title}</Text>

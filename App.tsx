@@ -6,11 +6,12 @@
 
 import './global.css';
 import { useEffect } from 'react';
-import { AppState, NativeModules, StatusBar } from 'react-native';
+import { AppState, NativeModules, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { getSupabaseClient } from './src/services/supabaseClient';
+import { useMissionStore } from './src/store/useMissionStore';
 
 // Initialize AdMob once, guarded so it's a no-op until the native rebuild.
 function initAds() {
@@ -36,8 +37,13 @@ function App() {
     if (!supabase) return;
     supabase.auth.startAutoRefresh();
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') supabase.auth.startAutoRefresh();
-      else supabase.auth.stopAutoRefresh();
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+        // Retry syncing any chants counted while offline.
+        void useMissionStore.getState().flush();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
     });
     return () => {
       sub.remove();
@@ -49,9 +55,33 @@ function App() {
     <SafeAreaProvider>
       {/* White status bar with dark icons across the whole app. */}
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <RootNavigator />
+      {/* Cap the app to a phone width and centre it, so tablets render the
+          same mobile-sized layout instead of stretching full-width. */}
+      <View style={styles.backdrop}>
+        <View style={styles.appFrame}>
+          <RootNavigator />
+        </View>
+      </View>
     </SafeAreaProvider>
   );
 }
+
+/** Max content width (dp). Phones are narrower, so they stay full-width; only
+ *  tablets get letterboxed to this phone-like column. */
+const PHONE_MAX_WIDTH = 480;
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#E5E7EB',
+  },
+  appFrame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: PHONE_MAX_WIDTH,
+    backgroundColor: '#FFFFFF',
+  },
+});
 
 export default App;

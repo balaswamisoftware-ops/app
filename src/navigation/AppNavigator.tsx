@@ -1,12 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
-import {
-  createBottomTabNavigator,
-  BottomTabBar,
-  type BottomTabBarProps,
-} from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { House, User, History } from 'lucide-react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
@@ -14,24 +8,10 @@ import { ChantingScreen } from '../screens/ChantingScreen';
 import { ChantHistoryScreen } from '../screens/ChantHistoryScreen';
 import { DonationScreen } from '../screens/DonationScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { AdBanner } from '../components/ads/AdBanner';
 import { colors } from '../constants/theme';
 
-// AdMob policy: never show ads on a payment screen.
-const NO_AD_ROUTES = ['Donation'];
-
-/** Bottom tab bar with an ad banner directly above it (hidden on payment). */
-function TabBarWithAd(props: BottomTabBarProps) {
-  const focusedTab = props.state.routes[props.state.index];
-  const nestedRoute = getFocusedRouteNameFromRoute(focusedTab) ?? '';
-  const showAd = !NO_AD_ROUTES.includes(nestedRoute);
-  return (
-    <View>
-      {showAd && <AdBanner />}
-      <BottomTabBar {...props} />
-    </View>
-  );
-}
+// The ad banner now scrolls inline at the top of each screen's content
+// (see <AdBanner /> in the screens) instead of being pinned above the tabs.
 
 /** Stack inside the Home tab (mission dashboard -> chanting -> donation). */
 export type HomeStackParamList = {
@@ -64,7 +44,7 @@ function HomeStack() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Sri Vidya Peetham' }}
+        options={{ title: 'Sri Vidya Peetam' }}
       />
       <Stack.Screen
         name="Chanting"
@@ -87,7 +67,6 @@ function HomeStack() {
 export function AppNavigator() {
   return (
     <Tab.Navigator
-      tabBar={props => <TabBarWithAd {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,

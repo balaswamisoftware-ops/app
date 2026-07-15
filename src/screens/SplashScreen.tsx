@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { colors } from '../constants/theme';
 import { splashImage } from '../assets/splash';
+import { AdBanner } from '../components/ads/AdBanner';
 
 /**
  * Full-screen launch splash. Shown while the persisted session is being
@@ -20,12 +21,13 @@ export function SplashScreen() {
       ) : (
         <View className="items-center">
           <Text className="text-4xl font-bold text-maroon">శ్రీ విద్యా పీఠం</Text>
-          <Text className="mt-2 text-lg text-primary">Sri Vidya Peetham</Text>
+          <Text className="mt-2 text-lg text-primary">Sri Vidya Peetam</Text>
         </View>
       )}
 
-      <View className="absolute bottom-16">
-        <ActivityIndicator size="large" color={colors.primary} />
+      {/* Small square ad + loader pinned to the bottom, over the splash art. */}
+      <View className="absolute bottom-0 items-center gap-5">
+        <AdBanner size="square" />
       </View>
     </View>
   );

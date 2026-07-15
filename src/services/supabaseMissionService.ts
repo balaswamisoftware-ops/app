@@ -9,6 +9,7 @@ function requireClient() {
 }
 
 const DEFAULT_TARGET = 100000;
+const DEFAULT_COMMUNITY_TARGET = 110000000; // 11 Crore
 const DEFAULT_DONATION = 216;
 
 export const supabaseMissionService: MissionService = {
@@ -20,6 +21,7 @@ export const supabaseMissionService: MissionService = {
     return {
       target: d.target ?? DEFAULT_TARGET,
       communityTotal: d.communityTotal ?? 0,
+      communityTarget: d.communityTarget ?? DEFAULT_COMMUNITY_TARGET,
       userCount: d.userCount ?? 0,
       donationAmount: d.donationAmount ?? DEFAULT_DONATION,
       completed: Boolean(d.completed),
@@ -47,14 +49,17 @@ export const supabaseMissionService: MissionService = {
     if (!session) return [];
     const { data, error } = await supabase
       .from('chant_logs')
-      .select('id, amount, created_at')
+      .select('id, amount, created_at, kind')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);
-    return (data as { id: string; amount: number; created_at: string }[]).map(r => ({
+    return (
+      data as { id: string; amount: number; created_at: string; kind?: string }[]
+    ).map(r => ({
       id: r.id,
       amount: r.amount,
+      kind: (r.kind as ChantLog['kind']) ?? 'add',
       createdAt: r.created_at,
     }));
   },

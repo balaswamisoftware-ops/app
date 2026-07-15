@@ -1,14 +1,16 @@
-/** A snapshot of the community chant mission. */
+/** A snapshot of the chant mission (personal + community). */
 export interface MissionStats {
-  /** Total chants targeted (e.g. 100,000). */
+  /** The devotee's personal target (e.g. 1,00,000). */
   target: number;
-  /** Chants completed by the whole community. */
+  /** Chants completed by the whole community (sum of all devotees). */
   communityTotal: number;
+  /** The shared community goal (e.g. 11 Crore = 11,00,00,000). */
+  communityTarget: number;
   /** The signed-in devotee's own chant count. */
   userCount: number;
   /** Seva donation amount in ₹ (from settings). */
   donationAmount: number;
-  /** True once the community reaches the target. */
+  /** True once the devotee reaches their personal target. */
   completed: boolean;
 }
 
@@ -20,10 +22,15 @@ export interface IncrementResult {
   completed: boolean;
 }
 
-/** A single chant submission (for the history screen). */
+/** How a chant-history entry was created. */
+export type ChantLogKind = 'add' | 'reset' | 'adjust';
+
+/** A single chant-history entry (an add, or an admin reset / adjustment). */
 export interface ChantLog {
   id: string;
+  /** Signed delta: positive for adds, negative for a reset/reduction. */
   amount: number;
+  kind: ChantLogKind;
   createdAt: string;
 }
 

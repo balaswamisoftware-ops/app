@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { missionService } from '../services/missionService';
-import type { MissionStats } from '../types/mission';
+import { useEffect } from 'react';
+import { useMissionStore } from '../store/useMissionStore';
 
 const DEFAULT_TARGET = 100000;
 
@@ -8,68 +7,69 @@ const DEFAULT_TARGET = 100000;
  * Loads the devotee's personal chant mission and submits chant counts.
  *
  * Each devotee has their OWN goal — chant "Om Namah Shivaya" 1,00,000 times.
- * Progress is personal (not a shared community total). Every submission is one
- * atomic backend call that logs the entry and returns the devotee's fresh count.
+ * State is backed by a shared, offline-safe Zustand store, so the count stays in
+ * sync across every screen (mala, presets, quick-chant) and survives being
+ * offline via a persisted `pending` queue.
  */
 export function useMission() {
-  const [stats, setStats] = useState<MissionStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const stats = useMissionStore(s => s.stats);
+  const userCount = useMissionStore(s => s.userCount);
+  const communityTotal = useMissionStore(s => s.communityTotal);
+  const communityTarget = useMissionStore(s => s.communityTarget);
+  const pending = useMissionStore(s => s.pending);
+  const loading = useMissionStore(s => s.loading);
+  const submitting = useMissionStore(s => s.submitting);
+  const error = useMissionStore(s => s.error);
+  const load = useMissionStore(s => s.load);
+  const addChants = useMissionStore(s => s.addChants);
+  const tap = useMissionStore(s => s.tap);
+  const flush = useMissionStore(s => s.flush);
+  const clearError = useMissionStore(s => s.clearError);
 
-  const [userCount, setUserCount] = useState(0);
-
-  const load = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const s = await missionService.getStats();
-      setStats(s);
-      setUserCount(s.userCount);
-    } catch {
-      setError('Could not load the mission. Pull down to refresh.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // On first use: hydrate any offline pending, load from server, then push
+  // leftover pending. Deduped inside the store, so mounting many screens is safe.
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  /** Submit a number of chants. Throws on failure so callers can react. */
-  const addChants = useCallback(async (delta: number) => {
-    if (!Number.isFinite(delta) || delta <= 0) return;
-    const n = Math.floor(delta);
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await missionService.addChants(n);
-      setUserCount(res.userCount);
-    } catch {
-      setError('Could not save your chants. Please check your connection and try again.');
-      throw new Error('add_failed');
-    } finally {
-      setSubmitting(false);
-    }
+    const store = useMissionStore.getState();
+    void (async () => {
+      await store.hydratePending();
+      if (useMissionStore.getState().stats === null) await store.load();
+      void store.flush();
+    })();
   }, []);
 
   const target = stats?.target ?? DEFAULT_TARGET;
   const remaining = Math.max(0, target - userCount);
   const percent = target > 0 ? Math.min(100, (userCount / target) * 100) : 0;
 
+  const communityRemaining = Math.max(0, communityTarget - communityTotal);
+  const communityPercent =
+    communityTarget > 0
+      ? Math.min(100, (communityTotal / communityTarget) * 100)
+      : 0;
+
   return {
     loading,
     error,
     submitting,
     refresh: load,
-    clearError: () => setError(null),
+    clearError,
+    // Personal goal (1 Lakh)
     target,
     userCount,
     remaining,
     percent,
     completed: userCount >= target,
+    // Community goal (11 Crore)
+    communityTotal,
+    communityTarget,
+    communityRemaining,
+    communityPercent,
+    // Offline queue
+    pending,
+    unsynced: pending > 0,
     donationAmount: stats?.donationAmount ?? 216,
     addChants,
+    tap,
+    flush,
   };
 }

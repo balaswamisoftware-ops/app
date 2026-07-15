@@ -7,6 +7,7 @@ const USER_KEY = '@sv/chant-user';
 const COMMUNITY_KEY = '@sv/chant-community';
 const LOGS_KEY = '@sv/chant-logs';
 const TARGET = 100000;
+const COMMUNITY_TARGET = 110000000; // 11 Crore
 const DONATION = 216;
 
 async function readInt(key: string): Promise<number> {
@@ -17,7 +18,8 @@ async function readInt(key: string): Promise<number> {
 
 async function readLogs(): Promise<ChantLog[]> {
   const raw = await AsyncStorage.getItem(LOGS_KEY);
-  return raw ? (JSON.parse(raw) as ChantLog[]) : [];
+  if (!raw) return [];
+  return (JSON.parse(raw) as ChantLog[]).map(l => ({ ...l, kind: l.kind ?? 'add' }));
 }
 
 /** Local, AsyncStorage-backed mission for development without a backend. */
@@ -29,9 +31,10 @@ export const mockMissionService: MissionService = {
     return {
       target: TARGET,
       communityTotal,
+      communityTarget: COMMUNITY_TARGET,
       userCount,
       donationAmount: DONATION,
-      completed: communityTotal >= TARGET,
+      completed: userCount >= TARGET,
     };
   },
 
@@ -40,7 +43,12 @@ export const mockMissionService: MissionService = {
     const userCount = (await readInt(USER_KEY)) + delta;
     const communityTotal = (await readInt(COMMUNITY_KEY)) + delta;
     const logs = await readLogs();
-    logs.unshift({ id: generateId(), amount: delta, createdAt: new Date().toISOString() });
+    logs.unshift({
+      id: generateId(),
+      amount: delta,
+      kind: 'add',
+      createdAt: new Date().toISOString(),
+    });
     await Promise.all([
       AsyncStorage.setItem(USER_KEY, String(userCount)),
       AsyncStorage.setItem(COMMUNITY_KEY, String(communityTotal)),
