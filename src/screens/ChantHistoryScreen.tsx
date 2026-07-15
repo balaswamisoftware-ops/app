@@ -18,7 +18,7 @@ import {
   Flame,
   History,
   RotateCcw,
-  SlidersHorizontal,
+  UserCog,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -100,11 +100,12 @@ function entryStyle(item: ChantLog): {
     return { Icon: RotateCcw, iconColor: colors.danger, chip: 'bg-red-50', label: 'Reset by admin' };
   }
   if (item.kind === 'adjust') {
+    const added = item.amount >= 0;
     return {
-      Icon: SlidersHorizontal,
-      iconColor: colors.textSecondary,
-      chip: 'bg-gray-100',
-      label: 'Adjusted by admin',
+      Icon: UserCog,
+      iconColor: added ? colors.primary : colors.danger,
+      chip: added ? 'bg-primary-light' : 'bg-red-50',
+      label: added ? 'Added by admin' : 'Reduced by admin',
     };
   }
   return { Icon: Flame, iconColor: colors.primary, chip: 'bg-primary-light', label: 'Chant added' };

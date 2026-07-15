@@ -55,8 +55,9 @@ function App() {
     <SafeAreaProvider>
       {/* White status bar with dark icons across the whole app. */}
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      {/* Cap the app to a phone width and centre it, so tablets render the
-          same mobile-sized layout instead of stretching full-width. */}
+      {/* Cap the app to a phone-width column and centre it — on both phones and
+          tablets — so a landscape tablet shows a centred column (Swiggy-style)
+          instead of stretching full-width. */}
       <View style={styles.backdrop}>
         <View style={styles.appFrame}>
           <RootNavigator />
