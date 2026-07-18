@@ -11,10 +11,13 @@ export function formatDateTime(iso: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${h12}:${mm} ${ampm}`;
 }
 
-/** Strip everything except digits, keeping the last 10 (Indian mobile). */
+/**
+ * Canonical mobile identity — digits only. Keeps ALL digits so international
+ * numbers retain their dial code (India stays 10 digits, handled upstream by
+ * `combineMobile`).
+ */
 export function normalizeMobile(mobile: string): string {
-  const digits = mobile.replace(/\D/g, '');
-  return digits.length > 10 ? digits.slice(-10) : digits;
+  return mobile.replace(/\D/g, '');
 }
 
 /** Map a mobile number to a stable synthetic email for Supabase Auth. */
@@ -37,8 +40,10 @@ export function formatNumber(n: number): string {
   return `${sign}${rest},${last3}`;
 }
 
-/** "9876543210" -> "98765 43210" for display. */
+/** Display a stored mobile: "9876543210" -> "98765 43210"; international ->
+ *  "+<digits>". */
 export function formatMobile(mobile: string): string {
   const key = normalizeMobile(mobile);
-  return key.length === 10 ? `${key.slice(0, 5)} ${key.slice(5)}` : key;
+  if (key.length === 10) return `${key.slice(0, 5)} ${key.slice(5)}`;
+  return key ? `+${key}` : key;
 }

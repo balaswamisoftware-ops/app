@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import {
   QrCode,
@@ -58,6 +59,7 @@ function DetailRow({
 export function DonationScreen() {
   const { paymentInfo, myDonation, loading, loadError, submitting, submit, refresh } =
     useDonation();
+  const insets = useSafeAreaInsets();
 
   const [txnId, setTxnId] = useState('');
   const [asset, setAsset] = useState<ScreenshotAsset | null>(null);
@@ -132,6 +134,7 @@ export function DonationScreen() {
     <ScrollView
       className="flex-1 bg-gray-50"
       contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
+      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
       keyboardShouldPersistTaps="handled"
     >
       {/* Amount */}

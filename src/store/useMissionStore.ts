@@ -71,16 +71,24 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
     set({ error: null, loading: true });
     try {
       const s = await missionService.getStats();
-      // The server total does not yet include locally-pending chants, so add
-      // them back so the on-screen numbers never appear to "drop".
-      const pending = get().pending;
-      set({
-        stats: s,
-        userCount: s.userCount + pending,
-        communityTotal: s.communityTotal + pending,
-        communityTarget: s.communityTarget,
-        loading: false,
-      });
+      if (flushing) {
+        // A flush is moving pending chants onto the server RIGHT NOW, so the
+        // server total and local `pending` are momentarily inconsistent —
+        // combining them would double-count (the "+33" bug). Trust the
+        // optimistic local total and only refresh the static fields.
+        set({ stats: s, communityTarget: s.communityTarget, loading: false });
+      } else {
+        // The server total does not yet include locally-pending chants, so add
+        // them back so the on-screen numbers never appear to "drop".
+        const pending = get().pending;
+        set({
+          stats: s,
+          userCount: s.userCount + pending,
+          communityTotal: s.communityTotal + pending,
+          communityTarget: s.communityTarget,
+          loading: false,
+        });
+      }
     } catch {
       set({
         error: 'Could not load the mission. Pull down to refresh.',

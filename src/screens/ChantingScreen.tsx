@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Plus, History, HandHeart } from 'lucide-react-native';
 
@@ -26,6 +29,7 @@ type Mode = 'input' | 'mala';
 export function ChantingScreen({ navigation }: Props) {
   const { userCount, target, remaining, submitting, error, clearError, addChants } =
     useMission();
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('input');
   const [custom, setCustom] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -54,13 +58,19 @@ export function ChantingScreen({ navigation }: Props) {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-gray-50"
-      contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Ad banner scrolls with the content, right under the header */}
-      <AdBanner />
+      <ScrollView
+        className="flex-1 bg-gray-50"
+        contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Ad banner scrolls with the content, right under the header */}
+        <AdBanner />
 
       {/* Count summary */}
       <View className="items-center rounded-2xl border border-gray-100 bg-white p-6">
@@ -195,6 +205,7 @@ export function ChantingScreen({ navigation }: Props) {
           { label: 'Keep chanting' },
         ]}
       />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

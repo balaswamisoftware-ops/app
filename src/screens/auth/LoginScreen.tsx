@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Phone, Lock, Eye, EyeOff, LogIn } from 'lucide-react-native';
+import { Lock, Eye, EyeOff, LogIn } from 'lucide-react-native';
 
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, PhoneInput } from '../../components/ui';
+import { combineMobile, DEFAULT_DIAL_CODE } from '../../constants/countryCodes';
 import { useAuth } from '../../hooks/useAuth';
 import { loginSchema, validate } from '../../validation/authValidation';
 
@@ -14,6 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 export function LoginScreen({ navigation }: Props) {
   const { login, submitting, error, clearError } = useAuth();
 
+  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,8 +24,7 @@ export function LoginScreen({ navigation }: Props) {
   const passwordRef = useRef<TextInput>(null);
 
   const handleMobileChange = (text: string) => {
-    // Keep the field digits-only so pasted values like "+91 98765..." don't break validation
-    setMobile(text.replace(/\D/g, '').slice(0, 10));
+    setMobile(text);
     if (errors.mobile) setErrors(({ mobile: _, ...rest }) => rest);
   };
 
@@ -35,7 +36,10 @@ export function LoginScreen({ navigation }: Props) {
   const onSubmit = async () => {
     Keyboard.dismiss();
     clearError();
-    const result = validate(loginSchema, { mobile, password });
+    const result = validate(loginSchema, {
+      mobile: combineMobile(dialCode, mobile),
+      password,
+    });
     if (!result.success) {
       setErrors(result.errors);
       return;
@@ -53,20 +57,15 @@ export function LoginScreen({ navigation }: Props) {
     >
       {/* Consistent vertical rhythm between fields */}
       <View className="gap-4">
-        <Input
+        <PhoneInput
           label="Mobile Number"
-          icon={Phone}
-          placeholder="10-digit mobile number"
-          keyboardType="number-pad"
-          maxLength={10}
-          value={mobile}
-          onChangeText={handleMobileChange}
+          dialCode={dialCode}
+          number={mobile}
+          onChangeDialCode={setDialCode}
+          onChangeNumber={handleMobileChange}
           error={errors.mobile}
-          autoComplete="tel"
-          textContentType="telephoneNumber"
           returnKeyType="next"
           onSubmitEditing={() => passwordRef.current?.focus()}
-          blurOnSubmit={false}
           editable={!submitting}
         />
 

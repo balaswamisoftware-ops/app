@@ -155,6 +155,15 @@ export function ChantHistoryScreen() {
     }, []),
   );
 
+  // Auto-load the latest records whenever the tab regains focus, so users never
+  // have to pull-to-refresh manually.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
+
   const toggle = (title: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setCollapsed(c => ({ ...c, [title]: !c[title] }));
@@ -221,14 +230,18 @@ export function ChantHistoryScreen() {
           return (
             <Pressable
               onPress={() => toggle(section.title)}
-              className="mb-1.5 mt-4 flex-row items-center justify-between rounded-lg py-1 active:opacity-60"
+              className="mb-1.5 mt-4 flex-row items-center justify-between gap-2 rounded-lg py-1 active:opacity-60"
             >
-              <View className="flex-row items-center gap-1">
+              <View className="flex-1 flex-row items-center gap-1">
                 <Chevron size={15} color={colors.textMuted} />
-                <Text className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <Text
+                  numberOfLines={1}
+                  style={{ paddingRight: 3 }}
+                  className="shrink text-xs font-semibold uppercase tracking-wide text-gray-500"
+                >
                   {section.title}
                 </Text>
-                <Text className="text-xs text-gray-400"> · {section.count}</Text>
+                <Text className="text-xs text-gray-400">· {section.count}</Text>
               </View>
               <Text className="text-xs font-medium text-gray-400">
                 {section.net >= 0 ? '+' : '−'}

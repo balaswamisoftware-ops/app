@@ -3,7 +3,6 @@ import { Pressable, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   User,
-  Phone,
   Star,
   Users,
   Lock,
@@ -15,8 +14,9 @@ import {
 
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { Button, Input, Select } from '../../components/ui';
+import { Button, Input, PhoneInput, Select } from '../../components/ui';
 import { NAKSHATRAMS } from '../../constants/nakshatram';
+import { combineMobile, DEFAULT_DIAL_CODE } from '../../constants/countryCodes';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { signUpSchema, validate } from '../../validation/authValidation';
@@ -45,6 +45,7 @@ export function SignUpScreen({ navigation }: Props) {
   const { signUp, submitting, error, clearError } = useAuth();
 
   const [form, setForm] = useState<FormState>(initialForm);
+  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -60,7 +61,9 @@ export function SignUpScreen({ navigation }: Props) {
 
   const onSubmit = async () => {
     clearError();
-    const result = validate(signUpSchema, form);
+    // Combine the dial code + local number into the canonical mobile identity.
+    const payload = { ...form, mobile: combineMobile(dialCode, form.mobile) };
+    const result = validate(signUpSchema, payload);
     // Surface both the field errors and the agreement error together.
     if (!result.success) setErrors(result.errors);
     if (!agreed) setAgreeError(true);
@@ -88,14 +91,12 @@ export function SignUpScreen({ navigation }: Props) {
         autoCapitalize="words"
       />
 
-      <Input
+      <PhoneInput
         label="Mobile Number"
-        icon={Phone}
-        placeholder="10-digit mobile number"
-        keyboardType="phone-pad"
-        maxLength={10}
-        value={form.mobile}
-        onChangeText={setField('mobile')}
+        dialCode={dialCode}
+        number={form.mobile}
+        onChangeDialCode={setDialCode}
+        onChangeNumber={setField('mobile')}
         error={errors.mobile}
       />
 

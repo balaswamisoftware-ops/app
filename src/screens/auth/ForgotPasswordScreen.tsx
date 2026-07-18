@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Phone, User, ArrowRight, ArrowLeft } from 'lucide-react-native';
+import { User, ArrowRight, ArrowLeft } from 'lucide-react-native';
 
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, PhoneInput } from '../../components/ui';
+import { combineMobile, DEFAULT_DIAL_CODE } from '../../constants/countryCodes';
 import { useAuth } from '../../hooks/useAuth';
 import { forgotPasswordSchema, validate } from '../../validation/authValidation';
-import { normalizeMobile } from '../../utils/format';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
 export function ForgotPasswordScreen({ navigation }: Props) {
   const { verifyIdentity, submitting, error, clearError } = useAuth();
 
+  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
   const [mobile, setMobile] = useState('');
   const [fullName, setFullName] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const onContinue = async () => {
     clearError();
-    const result = validate(forgotPasswordSchema, { mobile, fullName });
+    const identity = combineMobile(dialCode, mobile);
+    const result = validate(forgotPasswordSchema, { mobile: identity, fullName });
     if (!result.success) {
       setErrors(result.errors);
       return;
@@ -30,7 +32,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     const matched = await verifyIdentity(result.data);
     if (matched) {
       navigation.navigate('ResetPassword', {
-        mobile: normalizeMobile(mobile),
+        mobile: identity,
         fullName: fullName.trim(),
       });
     }
@@ -42,14 +44,12 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       subtitle="Confirm your identity to set a new password"
       error={error}
     >
-      <Input
+      <PhoneInput
         label="Mobile Number"
-        icon={Phone}
-        placeholder="10-digit mobile number"
-        keyboardType="phone-pad"
-        maxLength={10}
-        value={mobile}
-        onChangeText={setMobile}
+        dialCode={dialCode}
+        number={mobile}
+        onChangeDialCode={setDialCode}
+        onChangeNumber={setMobile}
         error={errors.mobile}
       />
 

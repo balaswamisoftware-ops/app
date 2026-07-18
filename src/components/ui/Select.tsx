@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Check, ChevronDown, Search, X } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
 import { cn } from './cn';
 
@@ -43,6 +44,7 @@ export function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const insets = useSafeAreaInsets();
 
   const showSearch = searchable ?? options.length >= 8;
 
@@ -147,6 +149,9 @@ export function Select({
               data={filtered}
               keyExtractor={item => item}
               keyboardShouldPersistTaps="handled"
+              // Clear the Android nav bar / gesture area so the last option
+              // (e.g. "Revati") is never hidden behind the system buttons.
+              contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
               ItemSeparatorComponent={() => (
                 <View className="mx-5 h-px bg-gray-100" />
               )}

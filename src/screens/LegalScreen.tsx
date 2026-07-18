@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RouteProp } from '@react-navigation/native';
 
 import { LEGAL_DOCUMENTS, type LegalDocumentId } from '../constants/legal';
@@ -13,11 +14,13 @@ type LegalRoute = RouteProp<Record<string, { document: LegalDocumentId }>, strin
  */
 export function LegalScreen({ route }: { route: LegalRoute }) {
   const doc = LEGAL_DOCUMENTS[route.params.document];
+  const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
       className="flex-1 bg-gray-50"
-      contentContainerClassName="p-5 pb-12 w-full max-w-[640px] self-center"
+      contentContainerClassName="p-5 w-full max-w-[640px] self-center"
+      contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       showsVerticalScrollIndicator={false}
     >
       <Text className="text-2xl font-extrabold text-gray-900">{doc.title}</Text>

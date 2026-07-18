@@ -1,16 +1,16 @@
 import { z } from 'zod';
 import { NAKSHATRAMS } from '../constants/nakshatram';
 
-/** 10-digit Indian mobile (leading 6-9), tolerant of spaces/+91 on input. */
+/**
+ * Canonical mobile identity (digits only). India stays 10 digits; international
+ * numbers carry their dial code (e.g. 14155551234), so we allow 8–15 digits.
+ * The dial code + local number are combined via `combineMobile` before validation.
+ */
 const mobileField = z
   .string()
   .trim()
-  .transform(v => v.replace(/\D/g, '').slice(-10))
-  .pipe(
-    z
-      .string()
-      .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
-  );
+  .transform(v => v.replace(/\D/g, ''))
+  .pipe(z.string().regex(/^\d{8,15}$/, 'Enter a valid mobile number'));
 
 const passwordField = z
   .string()
