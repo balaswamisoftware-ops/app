@@ -3,11 +3,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   ScrollView,
   Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 import { launchImageLibrary } from 'react-native-image-picker';
 import {
   QrCode,
@@ -60,6 +62,7 @@ export function DonationScreen() {
   const { paymentInfo, myDonation, loading, loadError, submitting, submit, refresh } =
     useDonation();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
 
   const [txnId, setTxnId] = useState('');
   const [asset, setAsset] = useState<ScreenshotAsset | null>(null);
@@ -134,8 +137,11 @@ export function DonationScreen() {
     <ScrollView
       className="flex-1 bg-gray-50"
       contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+      contentContainerStyle={{
+        paddingBottom: insets.bottom + 28 + keyboardHeight,
+      }}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
     >
       {/* Amount */}
       <View className="items-center rounded-2xl border border-gray-100 bg-white p-6">

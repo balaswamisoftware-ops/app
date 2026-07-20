@@ -41,6 +41,7 @@ import { NAKSHATRAMS } from '../constants/nakshatram';
 import { colors } from '../constants/theme';
 import { formatMobile } from '../utils/format';
 import { useProfile } from '../hooks/useProfile';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 import { AdBanner } from '../components/ads/AdBanner';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
 
@@ -123,6 +124,8 @@ export function ProfileScreen({ navigation }: Props) {
     logout,
   } = useProfile();
 
+  const keyboardHeight = useKeyboardHeight();
+
   // Confirm before logging out — it's destructive and easy to tap by mistake.
   const confirmLogout = () => {
     Alert.alert(
@@ -166,8 +169,11 @@ export function ProfileScreen({ navigation }: Props) {
     >
       <ScrollView
         className="flex-1 bg-gray-50"
-        contentContainerClassName="p-4 pb-8 gap-4 w-full max-w-[600px] self-center"
+        contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
+        // Scroll space for the keyboard so edit fields are never covered.
+        contentContainerStyle={{ paddingBottom: 32 + keyboardHeight }}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         refreshControl={
           <RefreshControl
             refreshing={loading}

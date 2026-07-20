@@ -18,6 +18,7 @@ import { colors } from '../constants/theme';
 import { formatNumber } from '../utils/format';
 import { clampChantInput } from '../constants/mission';
 import { useMission } from '../hooks/useMission';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 import { AdBanner } from '../components/ads/AdBanner';
 import { MalaCounter } from '../components/chant/MalaCounter';
 
@@ -30,6 +31,7 @@ export function ChantingScreen({ navigation }: Props) {
   const { userCount, target, remaining, submitting, error, clearError, addChants } =
     useMission();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [mode, setMode] = useState<Mode>('input');
   const [custom, setCustom] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -65,8 +67,11 @@ export function ChantingScreen({ navigation }: Props) {
       <ScrollView
         className="flex-1 bg-gray-50"
         contentContainerClassName="p-4 gap-4 w-full max-w-[600px] self-center"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 28 + keyboardHeight,
+        }}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         showsVerticalScrollIndicator={false}
       >
         {/* Ad banner scrolls with the content, right under the header */}

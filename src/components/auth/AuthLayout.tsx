@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertCircle } from 'lucide-react-native';
 import { colors } from '../../constants/theme';
 import { logoImage } from '../../assets/logo';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 
 interface AuthLayoutProps {
   title: string;
@@ -25,6 +26,8 @@ interface AuthLayoutProps {
  * avoidance, scrolling, the brand header and a dismissible error banner.
  */
 export function AuthLayout({ title, subtitle, error, children }: AuthLayoutProps) {
+  const keyboardHeight = useKeyboardHeight();
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -32,8 +35,12 @@ export function AuthLayout({ title, subtitle, error, children }: AuthLayoutProps
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerClassName="grow px-6 pb-8 pt-6 w-full max-w-[600px] self-center"
+          contentContainerClassName="grow px-6 pt-6 w-full max-w-[600px] self-center"
+          // Extra space equal to the keyboard so every field (e.g. Password)
+          // can be scrolled above it — Android 15+ no longer resizes the window.
+          contentContainerStyle={{ paddingBottom: keyboardHeight + 32 }}
           keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           showsVerticalScrollIndicator={false}
         >
           {/* Brand header */}
