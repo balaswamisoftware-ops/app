@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAppConfig } from '../services/appConfigService';
 import { APP_VERSION, PLAY_STORE_URL, compareVersions } from '../config/version';
+import { useAdConfigStore } from '../store/useAdConfigStore';
 
 export type UpdateStatus = 'checking' | 'ok' | 'optional' | 'required';
 
@@ -23,6 +24,8 @@ export function useAppUpdate() {
       try {
         const cfg = await fetchAppConfig();
         if (cancelled) return;
+        // Publish the admin-managed AdMob unit IDs to the ad store.
+        useAdConfigStore.getState().setUnits(cfg.ads);
         setLatestVersion(cfg.latestVersion);
         setUpdateUrl(cfg.updateUrl);
         if (compareVersions(APP_VERSION, cfg.minVersion) < 0) setStatus('required');

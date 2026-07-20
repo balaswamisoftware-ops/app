@@ -91,6 +91,11 @@ export const mockAuthService: AuthService = {
     await AsyncStorage.removeItem(SESSION_KEY);
   },
 
+  async deleteAccount() {
+    await delay(300);
+    await AsyncStorage.removeItem(SESSION_KEY);
+  },
+
   async verifyIdentity({ mobile, fullName }) {
     await delay(500);
     const key = normalizeMobile(mobile);

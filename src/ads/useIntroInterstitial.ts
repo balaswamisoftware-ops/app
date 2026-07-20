@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { NativeModules } from 'react-native';
 import { AD_UNITS } from '../config/ads';
+import { getInterstitialUnitId } from '../store/useAdConfigStore';
 
 /**
  * Full-screen video interstitial shown after the splash screen on EVERY app
@@ -44,9 +45,10 @@ export function useIntroInterstitial(ready: boolean) {
     if (!ADS_AVAILABLE) return;
     const unsubs: Array<() => void> = [];
 
+    // Release builds prefer the admin-configured unit for this platform.
     const unitId = __DEV__
       ? TestIds.INTERSTITIAL
-      : AD_UNITS.interstitial || TestIds.INTERSTITIAL;
+      : getInterstitialUnitId() || AD_UNITS.interstitial || TestIds.INTERSTITIAL;
 
     const ad = InterstitialAd.createForAdRequest(unitId, {
       requestNonPersonalizedAdsOnly: true,

@@ -21,12 +21,13 @@ const emptyForm: EditForm = { fullName: '', nakshatram: '', gothram: '' };
  * The screen stays purely presentational.
  */
 export function useProfile() {
-  const { user, refreshProfile, updateProfile, logout } = useAuthStore(
+  const { user, refreshProfile, updateProfile, logout, deleteAccount } = useAuthStore(
     useShallow(s => ({
       user: s.user,
       refreshProfile: s.refreshProfile,
       updateProfile: s.updateProfile,
       logout: s.logout,
+      deleteAccount: s.deleteAccount,
     })),
   );
 
@@ -123,5 +124,6 @@ export function useProfile() {
     save,
     dismissFeedback: () => setFeedback(null),
     logout,
+    deleteAccount,
   };
 }

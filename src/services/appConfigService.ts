@@ -8,7 +8,21 @@ export interface AppConfig {
   minVersion: string;
   /** Store URL the update button opens. */
   updateUrl: string;
+  /** AdMob unit IDs managed from the admin portal (empty -> test ads). */
+  ads: {
+    androidBanner: string;
+    androidInterstitial: string;
+    iosBanner: string;
+    iosInterstitial: string;
+  };
 }
+
+const EMPTY_ADS = {
+  androidBanner: '',
+  androidInterstitial: '',
+  iosBanner: '',
+  iosInterstitial: '',
+};
 
 /**
  * Fetch the remote version config (public — works before login). Falls back to
@@ -18,7 +32,12 @@ export interface AppConfig {
 export async function fetchAppConfig(): Promise<AppConfig> {
   const supabase = getSupabaseClient();
   if (!supabase) {
-    return { latestVersion: APP_VERSION, minVersion: '0.0.0', updateUrl: PLAY_STORE_URL };
+    return {
+      latestVersion: APP_VERSION,
+      minVersion: '0.0.0',
+      updateUrl: PLAY_STORE_URL,
+      ads: EMPTY_ADS,
+    };
   }
   const { data, error } = await supabase.rpc('app_config');
   if (error) throw new Error(error.message);
@@ -27,5 +46,6 @@ export async function fetchAppConfig(): Promise<AppConfig> {
     latestVersion: d.latestVersion || APP_VERSION,
     minVersion: d.minVersion || '0.0.0',
     updateUrl: d.updateUrl || PLAY_STORE_URL,
+    ads: { ...EMPTY_ADS, ...(d.ads ?? {}) },
   };
 }

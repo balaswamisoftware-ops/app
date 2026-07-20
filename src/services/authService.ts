@@ -35,6 +35,12 @@ export interface AuthService {
     fullName: string;
     newPassword: string;
   }): Promise<void>;
+
+  /**
+   * Permanently delete the signed-in devotee's account and all of their data
+   * (required by Google Play for apps that allow sign-up).
+   */
+  deleteAccount(): Promise<void>;
 }
 
 /**

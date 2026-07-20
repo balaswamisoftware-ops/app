@@ -1,6 +1,7 @@
 import React from 'react';
-import { NativeModules, View } from 'react-native';
+import { NativeModules, Platform, View } from 'react-native';
 import { AD_UNITS } from '../../config/ads';
+import { useAdConfigStore } from '../../store/useAdConfigStore';
 import { cn } from '../ui/cn';
 
 // The AdMob native module only exists after a native rebuild. Guard on it so a
@@ -35,17 +36,22 @@ export interface AdBannerProps {
  * before a rebuild) or if ads aren't configured yet.
  */
 export function AdBanner({ unitId, size = 'anchored', className }: AdBannerProps) {
+  // Admin-managed unit id for this platform (empty until configured).
+  const remoteBanner = useAdConfigStore(s =>
+    Platform.OS === 'ios' ? s.iosBanner : s.androidBanner,
+  );
+
   if (!ADS_AVAILABLE) return null;
 
   const square = size === 'square';
 
-  // Debug builds ALWAYS use Google test ads (safe to view/click). Real ad units
-  // are only used in production/release builds.
+  // Debug builds ALWAYS use Google test ads (safe to view/click). Release builds
+  // use the admin-configured unit, falling back to the local config, then test.
   const id = __DEV__
     ? square
       ? TestIds.MEDIUM_RECTANGLE ?? TestIds.ADAPTIVE_BANNER
       : TestIds.ADAPTIVE_BANNER
-    : unitId || AD_UNITS.banner || TestIds.ADAPTIVE_BANNER;
+    : unitId || remoteBanner || AD_UNITS.banner || TestIds.ADAPTIVE_BANNER;
 
   return (
     <View className={cn('items-center justify-center bg-white', className)}>

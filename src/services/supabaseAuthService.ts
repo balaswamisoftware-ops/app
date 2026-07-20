@@ -134,6 +134,18 @@ export const supabaseAuthService: AuthService = {
     await supabase.auth.signOut();
   },
 
+  /**
+   * Permanently delete the caller's account. The `delete_my_account` RPC is
+   * SECURITY DEFINER and only ever removes the CALLER's own row (auth.uid()),
+   * along with their chants, donations and payment screenshots.
+   */
+  async deleteAccount() {
+    const supabase = requireClient();
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) throw new Error(error.message);
+    await supabase.auth.signOut();
+  },
+
   // Identity verification and password reset both run inside the
   // `reset-password` Edge Function, which holds the secret key server-side.
   // Passing no `newPassword` performs a verify-only check.

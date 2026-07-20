@@ -24,6 +24,7 @@ import {
   FileText,
   ShieldCheck,
   ChevronRight,
+  Trash2,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -122,6 +123,7 @@ export function ProfileScreen({ navigation }: Props) {
     save,
     dismissFeedback,
     logout,
+    deleteAccount,
   } = useProfile();
 
   const keyboardHeight = useKeyboardHeight();
@@ -134,6 +136,43 @@ export function ProfileScreen({ navigation }: Props) {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Log out', style: 'destructive', onPress: logout },
+      ],
+    );
+  };
+
+  // Permanent account deletion — double-confirmed, as it cannot be undone.
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your account, your chant history and your seva records. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              'This cannot be undone',
+              'Are you absolutely sure you want to permanently delete your account?',
+              [
+                { text: 'Keep my account', style: 'cancel' },
+                {
+                  text: 'Delete forever',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteAccount();
+                    } catch {
+                      Alert.alert(
+                        'Could not delete account',
+                        'Please check your connection and try again.',
+                      );
+                    }
+                  },
+                },
+              ],
+            ),
+        },
       ],
     );
   };
@@ -333,13 +372,28 @@ export function ProfileScreen({ navigation }: Props) {
             />
 
             {/* Visually separated so a quick tap on Edit never hits Log out */}
-            <View className="mt-2 border-t border-gray-200 pt-4">
+            <View className="mt-2 gap-3 border-t border-gray-200 pt-4">
               <Button
                 label="Log out"
                 variant="outline"
                 leftIcon={LogOut}
                 onPress={confirmLogout}
               />
+
+              {/* Permanent deletion — required by Google Play for accounts */}
+              <Pressable
+                onPress={confirmDeleteAccount}
+                accessibilityRole="button"
+                className="flex-row items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3.5 active:opacity-70"
+              >
+                <Trash2 size={18} color={colors.danger} />
+                <Text className="text-base font-semibold text-red-600">
+                  Delete my account
+                </Text>
+              </Pressable>
+              <Text className="text-center text-xs text-gray-400">
+                Permanently deletes your account, chant history and seva records.
+              </Text>
             </View>
           </>
         )}

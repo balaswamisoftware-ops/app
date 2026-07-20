@@ -21,6 +21,8 @@ interface AuthStoreState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   signUp: (data: SignUpData) => Promise<boolean>;
   logout: () => Promise<void>;
+  /** Permanently delete the account and all data. Signs the user out. */
+  deleteAccount: () => Promise<void>;
   /** Returns true when mobile + full name match an account. */
   verifyIdentity: (data: ForgotPasswordData) => Promise<boolean>;
   resetPassword: (data: {
@@ -91,6 +93,11 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
 
   logout: async () => {
     await authService.logout();
+    set({ user: null, status: 'unauthenticated' });
+  },
+
+  deleteAccount: async () => {
+    await authService.deleteAccount();
     set({ user: null, status: 'unauthenticated' });
   },
 
