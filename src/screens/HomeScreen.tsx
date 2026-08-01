@@ -48,7 +48,7 @@ function Stat({
       >
         {value}
       </Text>
-      <Text className="text-xs text-gray-500">{label}</Text>
+      <Text className="text-center text-xs text-gray-500">{label}</Text>
     </View>
   );
 }
@@ -160,15 +160,19 @@ export function HomeScreen({ navigation }: Props) {
         {/* Personal progress — the single source of truth for your numbers */}
         <View className="rounded-2xl border border-gray-100 bg-white p-5">
           <View className="flex-row items-end justify-between">
-            <View>
+            <View className="flex-1 pr-2">
               <Text className="text-xs uppercase tracking-wide text-gray-400">
                 Your progress
               </Text>
-              <Text className="mt-0.5 text-3xl font-bold text-gray-900">
+              <Text
+                className="mt-0.5 text-3xl font-bold text-gray-900"
+                adjustsFontSizeToFit
+                numberOfLines={1}
+              >
                 {formatNumber(mission.userCount)}
               </Text>
             </View>
-            <Text className="text-sm text-gray-400">
+            <Text className="shrink-0 text-sm text-gray-400">
               of {formatNumber(mission.target)}
             </Text>
           </View>
@@ -176,10 +180,10 @@ export function HomeScreen({ navigation }: Props) {
             <ProgressBar value={mission.percent} />
           </View>
           <View className="mt-2 flex-row justify-between">
-            <Text className="text-xs font-medium text-primary-dark">
+            <Text className="shrink-0 text-xs font-medium text-primary-dark">
               {mission.percent.toFixed(1)}% complete
             </Text>
-            <Text className="text-xs text-gray-500">
+            <Text className="shrink pl-2 text-right text-xs text-gray-500">
               {formatNumber(mission.remaining)} remaining
             </Text>
           </View>
@@ -211,15 +215,19 @@ export function HomeScreen({ navigation }: Props) {
         <View className="overflow-hidden rounded-2xl bg-primary-light p-5">
           <View className="flex-row items-center gap-2">
             <Users size={16} color={colors.primary} />
-            <Text className="text-xs font-semibold uppercase tracking-wide text-primary-dark">
+            <Text className="flex-1 text-xs font-semibold uppercase tracking-wide text-primary-dark">
               Community Mission · 11 Crore
             </Text>
           </View>
           <View className="mt-2 flex-row items-end justify-between">
-            <Text className="text-3xl font-extrabold text-gray-900">
+            <Text
+              className="shrink text-3xl font-extrabold text-gray-900"
+              adjustsFontSizeToFit
+              numberOfLines={1}
+            >
               {formatNumber(mission.communityTotal)}
             </Text>
-            <Text className="text-sm text-gray-600">
+            <Text className="shrink-0 pl-2 text-sm text-gray-600">
               of {formatNumber(mission.communityTarget)}
             </Text>
           </View>
@@ -227,13 +235,13 @@ export function HomeScreen({ navigation }: Props) {
             <ProgressBar value={mission.communityPercent} />
           </View>
           <View className="mt-2 flex-row justify-between">
-            <Text className="text-xs font-medium text-primary-dark">
+            <Text className="shrink-0 text-xs font-medium text-primary-dark">
               {mission.communityPercent < 0.01
                 ? '<0.01'
                 : mission.communityPercent.toFixed(2)}
               % complete
             </Text>
-            <Text className="text-xs text-gray-600">
+            <Text className="shrink pl-2 text-right text-xs text-gray-600">
               {formatNumber(mission.communityRemaining)} to go
             </Text>
           </View>

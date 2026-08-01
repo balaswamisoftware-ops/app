@@ -13,11 +13,17 @@ if (__DEV__) {
   LogBox.ignoreAllLogs();
 }
 
-// Cap how much the OS font-size setting can enlarge text, so very large
-// accessibility fonts never break layouts on any device.
+// Render text at the app's designed size regardless of the device's system
+// "Font size" setting. This UI is pixel-tuned (the fixed 300px SVG mala, the
+// circular gauges, the stat tiles, the Nakshatram dropdown), and a large system
+// font would previously enlarge text up to 1.3x and clip the last word of many
+// labels ("of 108" -> "of", "Total chants" -> "Total", "will sync" -> "will").
+// Fixing font scaling to 1x keeps every layout intact on every device.
 Text.defaultProps = Text.defaultProps || {};
-Text.defaultProps.maxFontSizeMultiplier = 1.3;
+Text.defaultProps.allowFontScaling = false;
+Text.defaultProps.maxFontSizeMultiplier = 1;
 TextInput.defaultProps = TextInput.defaultProps || {};
-TextInput.defaultProps.maxFontSizeMultiplier = 1.3;
+TextInput.defaultProps.allowFontScaling = false;
+TextInput.defaultProps.maxFontSizeMultiplier = 1;
 
 AppRegistry.registerComponent(appName, () => App);

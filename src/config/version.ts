@@ -7,7 +7,7 @@
  * Then raise `latest_version` (and `min_version` for a forced update) in the
  * Supabase `settings` row so existing users get prompted to update.
  */
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 /** Where the update button sends users when no URL is configured server-side. */
 export const PLAY_STORE_URL =

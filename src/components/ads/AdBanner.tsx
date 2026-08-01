@@ -32,26 +32,34 @@ export interface AdBannerProps {
 }
 
 /**
- * An AdMob banner. Renders nothing if the native module isn't present (i.e.
- * before a rebuild) or if ads aren't configured yet.
+ * An AdMob banner. Renders nothing — and loads nothing — when the native module
+ * isn't present (i.e. before a rebuild), when the admin has ads switched off,
+ * or when no ad-unit id is configured for this platform.
  */
 export function AdBanner({ unitId, size = 'anchored', className }: AdBannerProps) {
-  // Admin-managed unit id for this platform (empty until configured).
+  // Master switch + admin-managed unit id for this platform.
+  const enabled = useAdConfigStore(s => s.enabled);
   const remoteBanner = useAdConfigStore(s =>
     Platform.OS === 'ios' ? s.iosBanner : s.androidBanner,
   );
 
   if (!ADS_AVAILABLE) return null;
+  // Admin switch is off (or the config hasn't loaded yet) — show no ad at all.
+  if (!enabled) return null;
 
   const square = size === 'square';
 
   // Debug builds ALWAYS use Google test ads (safe to view/click). Release builds
-  // use the admin-configured unit, falling back to the local config, then test.
+  // use the admin-configured unit, falling back to the local config.
   const id = __DEV__
     ? square
       ? TestIds.MEDIUM_RECTANGLE ?? TestIds.ADAPTIVE_BANNER
       : TestIds.ADAPTIVE_BANNER
-    : unitId || remoteBanner || AD_UNITS.banner || TestIds.ADAPTIVE_BANNER;
+    : unitId || remoteBanner || AD_UNITS.banner;
+
+  // Ads are on but no real unit id was configured — skip silently rather than
+  // rendering an empty box or falling back to a test ad in production.
+  if (!id) return null;
 
   return (
     <View className={cn('items-center justify-center bg-white', className)}>

@@ -177,7 +177,7 @@ export function Select({
                   >
                     <Text
                       className={cn(
-                        'text-base',
+                        'flex-1 pr-2 text-base',
                         selected
                           ? 'font-semibold text-primary-dark'
                           : 'text-gray-700',

@@ -93,8 +93,9 @@ export function Button({
         <>
           {Left && <Left size={iconSize} color={iconColor[variant]} />}
           <Text
-            className={cn('font-semibold', text[variant], textSize[size])}
+            className={cn('shrink font-semibold', text[variant], textSize[size])}
             numberOfLines={1}
+            adjustsFontSizeToFit
           >
             {label}
           </Text>

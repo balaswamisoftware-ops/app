@@ -8,8 +8,10 @@ export interface AppConfig {
   minVersion: string;
   /** Store URL the update button opens. */
   updateUrl: string;
-  /** AdMob unit IDs managed from the admin portal (empty -> test ads). */
+  /** AdMob config managed from the admin portal. */
   ads: {
+    /** Master switch — while false the app shows no ads at all. */
+    enabled: boolean;
     androidBanner: string;
     androidInterstitial: string;
     iosBanner: string;
@@ -17,7 +19,10 @@ export interface AppConfig {
   };
 }
 
+// Ads default to OFF everywhere: an unreachable backend, an older server
+// without the flag, or a malformed response must never switch ads on.
 const EMPTY_ADS = {
+  enabled: false,
   androidBanner: '',
   androidInterstitial: '',
   iosBanner: '',
@@ -46,6 +51,8 @@ export async function fetchAppConfig(): Promise<AppConfig> {
     latestVersion: d.latestVersion || APP_VERSION,
     minVersion: d.minVersion || '0.0.0',
     updateUrl: d.updateUrl || PLAY_STORE_URL,
-    ads: { ...EMPTY_ADS, ...(d.ads ?? {}) },
+    // `enabled` is coerced explicitly so a missing/odd value can only ever
+    // resolve to false, never to a truthy string.
+    ads: { ...EMPTY_ADS, ...(d.ads ?? {}), enabled: d.ads?.enabled === true },
   };
 }

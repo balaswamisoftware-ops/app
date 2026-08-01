@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { NativeModules } from 'react-native';
 import { AD_UNITS } from '../config/ads';
-import { getInterstitialUnitId } from '../store/useAdConfigStore';
+import {
+  getInterstitialUnitId,
+  useAdConfigStore,
+} from '../store/useAdConfigStore';
 
 /**
  * Full-screen video interstitial shown after the splash screen on EVERY app
@@ -40,15 +43,22 @@ export function useIntroInterstitial(ready: boolean) {
   const shownRef = useRef(false);
   const showFnRef = useRef<() => void>(() => {});
 
-  // Preload on mount (every cold start).
+  // Master switch from the admin portal. It starts false and flips true only
+  // after the remote config arrives, so this effect is what actually kicks off
+  // the preload — nothing is requested from AdMob while ads are switched off.
+  const enabled = useAdConfigStore(s => s.enabled);
+
   useEffect(() => {
-    if (!ADS_AVAILABLE) return;
+    if (!ADS_AVAILABLE || !enabled) return;
     const unsubs: Array<() => void> = [];
 
-    // Release builds prefer the admin-configured unit for this platform.
+    // Release builds use the admin-configured unit for this platform.
     const unitId = __DEV__
       ? TestIds.INTERSTITIAL
-      : getInterstitialUnitId() || AD_UNITS.interstitial || TestIds.INTERSTITIAL;
+      : getInterstitialUnitId() || AD_UNITS.interstitial;
+
+    // Ads are on but no unit id is configured — skip gracefully.
+    if (!unitId) return;
 
     const ad = InterstitialAd.createForAdRequest(unitId, {
       requestNonPersonalizedAdsOnly: true,
@@ -86,7 +96,7 @@ export function useIntroInterstitial(ready: boolean) {
     return () => {
       unsubs.forEach(u => u());
     };
-  }, []);
+  }, [enabled]);
 
   // When the splash finishes, show the ad if it's already loaded (otherwise the
   // LOADED handler above shows it as soon as it arrives).

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { AdBanner } from './AdBanner';
+import { useAdConfigStore } from '../../store/useAdConfigStore';
 
 interface Props {
   visible: boolean;
@@ -20,9 +21,16 @@ interface Props {
  */
 export function FullScreenAdGate({ visible, seconds = 5, onClose }: Props) {
   const [remaining, setRemaining] = useState(seconds);
+  const enabled = useAdConfigStore(s => s.enabled);
 
   useEffect(() => {
     if (!visible) return;
+    // Ads switched off — dismiss immediately so the caller's `visible` flag is
+    // reset and the devotee never sees an empty advertisement page.
+    if (!enabled) {
+      onClose();
+      return;
+    }
     setRemaining(seconds);
     const closeTimer = setTimeout(onClose, seconds * 1000);
     const tick = setInterval(
@@ -34,7 +42,9 @@ export function FullScreenAdGate({ visible, seconds = 5, onClose }: Props) {
       clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, enabled]);
+
+  if (!enabled) return null;
 
   return (
     <Modal

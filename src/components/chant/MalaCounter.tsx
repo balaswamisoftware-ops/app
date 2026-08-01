@@ -376,11 +376,11 @@ export function MalaCounter() {
 
       {/* Totals */}
       <View className="mt-5 w-full flex-row justify-around">
-        <View className="items-center">
+        <View className="flex-1 items-center">
           <Text className="text-xl font-bold text-gray-900">{formatNumber(malas)}</Text>
           <Text className="text-xs text-gray-500">Malas done</Text>
         </View>
-        <View className="items-center">
+        <View className="flex-1 items-center">
           <Text className="text-xl font-bold text-gray-900">
             {formatNumber(userCount)}
           </Text>
@@ -389,7 +389,7 @@ export function MalaCounter() {
       </View>
 
       {/* Sync status — reassures the user their taps are safe, even offline */}
-      <View className="mt-4 h-5 flex-row items-center gap-1.5">
+      <View className="mt-4 min-h-5 flex-row items-center justify-center gap-1.5">
         {submitting ? (
           <>
             <RefreshCw size={13} color={colors.textMuted} />
@@ -398,7 +398,7 @@ export function MalaCounter() {
         ) : unsynced ? (
           <>
             <CloudOff size={13} color={colors.textMuted} />
-            <Text className="text-xs text-gray-400">
+            <Text className="shrink text-xs text-gray-400">
               {formatNumber(pending)} saved offline · will sync
             </Text>
           </>
