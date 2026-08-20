@@ -165,17 +165,16 @@ export function ChantingScreen({ navigation }: Props) {
             ))}
           </View>
 
-          {/* Custom amount */}
-          <View className="mt-4 flex-row items-end gap-2">
+          {/* Custom amount — label above and helper below the row so the input
+              field and the Add button align cleanly (the label/helper were
+              inside the Input before, which pushed the button out of line). */}
+          <Text className="mb-1.5 mt-4 text-sm font-medium text-gray-700">
+            Custom count
+          </Text>
+          <View className="flex-row items-center gap-2">
             <View className="flex-1">
               <Input
-                label="Custom count"
                 placeholder="e.g. 1008"
-                helperText={
-                  cap === null
-                    ? 'Enter any amount'
-                    : `Up to ${cap.toLocaleString('en-IN')} at a time`
-                }
                 keyboardType="number-pad"
                 value={custom}
                 onChangeText={t => setCustom(clampChantInput(t, cap))}
@@ -191,6 +190,11 @@ export function ChantingScreen({ navigation }: Props) {
               onPress={submitCustom}
             />
           </View>
+          <Text className="mt-1.5 text-xs text-gray-500">
+            {cap === null
+              ? 'Enter any amount'
+              : `Up to ${cap.toLocaleString('en-IN')} at a time`}
+          </Text>
 
           {submitting ? (
             <View className="mt-3 flex-row items-center justify-center gap-2">

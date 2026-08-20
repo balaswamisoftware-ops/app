@@ -57,8 +57,11 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      {/* White status bar with dark icons across the whole app. */}
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      {/* Dark status-bar icons across the app. No `backgroundColor` on purpose:
+          on Android 15+ (edge-to-edge) the bar is transparent and content draws
+          behind it (SafeAreaProvider handles the insets). Setting a colour would
+          call the now-deprecated setStatusBarColor API that Play flags. */}
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       {/* Cap the app to a phone-width column and centre it — on both phones and
           tablets — so a landscape tablet shows a centred column (Swiggy-style)
           instead of stretching full-width. */}

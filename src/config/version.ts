@@ -1,13 +1,15 @@
+import { version } from '../../package.json';
+
 /**
  * App version shown to users and used for the update gate.
  *
- * IMPORTANT: bump this on every release, in sync with the native version:
- *   - android/app/build.gradle  → versionName (and versionCode)
- *   - ios build settings         → CFBundleShortVersionString
- * Then raise `latest_version` (and `min_version` for a forced update) in the
- * Supabase `settings` row so existing users get prompted to update.
+ * SINGLE SOURCE OF TRUTH: the version lives in `package.json`. This re-exports
+ * it, and `android/app/build.gradle` reads the SAME field for its `versionName`,
+ * so a release is bumped in ONE place (only the native integer `versionCode`
+ * stays manual). After bumping, raise `latest_version` (and `min_version` for a
+ * forced update) in the Supabase `settings` row so users get the update prompt.
  */
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = version;
 
 /** Where the update button sends users when no URL is configured server-side. */
 export const PLAY_STORE_URL =

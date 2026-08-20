@@ -75,6 +75,13 @@ def enableProguardInReleaseBuilds = true
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Single source of truth for the app version: read `versionName` from the root
+// package.json (the same field `src/config/version.ts` re-exports), so a release
+// is bumped in ONE place. `versionCode` stays a manual integer that must
+// increment on every Play upload.
+def appVersionName = new groovy.json.JsonSlurper()
+    .parseText(file("$projectDir/../../package.json").text).version
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -85,8 +92,8 @@ android {
         applicationId "com.srividyapitam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.3"
+        versionCode 5
+        versionName "1.4.0"
     }
     signingConfigs {
         debug {

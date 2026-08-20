@@ -34,6 +34,7 @@ import { Banner } from '../components/ui';
 import { colors } from '../constants/theme';
 import { formatDateTime, formatNumber } from '../utils/format';
 import { useChantHistory } from '../hooks/useChantHistory';
+import { useMission } from '../hooks/useMission';
 import { AdBanner } from '../components/ads/AdBanner';
 import { FullScreenAdGate } from '../components/ads/FullScreenAdGate';
 import type { ChantLog } from '../types/mission';
@@ -138,7 +139,12 @@ function LogRow({ item }: { item: ChantLog }) {
 }
 
 export function ChantHistoryScreen() {
-  const { logs, total, loading, error, refresh } = useChantHistory();
+  const { logs, loading, error, refresh } = useChantHistory();
+  // The "Total chanted" header shows the AUTHORITATIVE current count (same
+  // source as Home), not a sum of the visible log rows — the log sum is wrong
+  // after an admin reset (and after 500+ entries), whereas the count always
+  // reflects the true server value.
+  const { userCount, refresh: refreshMission } = useMission();
   const grouped = useMemo(() => groupLogs(logs), [logs]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -158,11 +164,12 @@ export function ChantHistoryScreen() {
     }, []),
   );
 
-  // Auto-load the latest records whenever the tab regains focus, so users never
-  // have to pull-to-refresh manually.
+  // Auto-load the latest records AND the authoritative count whenever the tab
+  // regains focus, so an admin change (e.g. a reset to 0) shows immediately.
   useFocusEffect(
     useCallback(() => {
       void refresh();
+      void refreshMission();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
@@ -206,7 +213,7 @@ export function ChantHistoryScreen() {
             adjustsFontSizeToFit
             numberOfLines={1}
           >
-            {formatNumber(total)}
+            {formatNumber(userCount)}
           </Text>
         </View>
       </View>
