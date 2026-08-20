@@ -21,6 +21,9 @@ import { useMission } from '../hooks/useMission';
 import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 import { AdBanner } from '../components/ads/AdBanner';
 import { MalaCounter } from '../components/chant/MalaCounter';
+import { MissionPausedCard } from '../components/notice/AnnouncementCard';
+import { useNoticeStore } from '../store/useNoticeStore';
+import { useChantLimitStore } from '../store/useChantLimitStore';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Chanting'>;
 
@@ -32,11 +35,24 @@ export function ChantingScreen({ navigation }: Props) {
     useMission();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
+  // An admin can pause the mission from the portal; while paused, nothing on
+  // this screen may add to the count.
+  const missionActive = useNoticeStore(s => s.missionActive);
+  // Admin-controlled cap on one submission. `null` = no restriction, the
+  // devotee enters whatever they wish.
+  const limitEnabled = useChantLimitStore(s => s.enabled);
+  const limitMax = useChantLimitStore(s => s.max);
+  const cap = limitEnabled ? Math.max(1, limitMax) : null;
+  // A preset above the cap would just error on tap, so don't offer it — and if
+  // the cap sits below every preset, offer the cap itself rather than an empty row.
+  const allowed = cap === null ? PRESETS : PRESETS.filter(n => n <= cap);
+  const presets = allowed.length > 0 ? allowed : cap !== null ? [cap] : PRESETS;
   const [mode, setMode] = useState<Mode>('input');
   const [custom, setCustom] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const submit = async (n: number) => {
+    if (!missionActive) return;
     try {
       await addChants(n);
     } catch {
@@ -94,8 +110,15 @@ export function ChantingScreen({ navigation }: Props) {
 
       {error ? <Banner type="error" message={error} onDismiss={clearError} /> : null}
 
+      <MissionPausedCard />
+
       {/* Mode switch: Quick Add | Mala */}
-      <View className="flex-row rounded-xl bg-gray-100 p-1">
+      <View
+        className={`flex-row rounded-xl bg-gray-100 p-1 ${
+          missionActive ? '' : 'opacity-40'
+        }`}
+        pointerEvents={missionActive ? 'auto' : 'none'}
+      >
         {(['input', 'mala'] as const).map(m => {
           const active = mode === m;
           return (
@@ -119,7 +142,7 @@ export function ChantingScreen({ navigation }: Props) {
         })}
       </View>
 
-      {mode === 'mala' ? (
+      {!missionActive ? null : mode === 'mala' ? (
         <MalaCounter />
       ) : (
         /* Preset amounts + custom */
@@ -128,7 +151,7 @@ export function ChantingScreen({ navigation }: Props) {
             Add your chant count
           </Text>
           <View className="flex-row flex-wrap gap-2">
-            {PRESETS.map(n => (
+            {presets.map(n => (
               <Pressable
                 key={n}
                 disabled={submitting}
@@ -148,13 +171,17 @@ export function ChantingScreen({ navigation }: Props) {
               <Input
                 label="Custom count"
                 placeholder="e.g. 1008"
-                helperText="Up to 5,000 at a time"
+                helperText={
+                  cap === null
+                    ? 'Enter any amount'
+                    : `Up to ${cap.toLocaleString('en-IN')} at a time`
+                }
                 keyboardType="number-pad"
                 value={custom}
-                onChangeText={t => setCustom(clampChantInput(t))}
+                onChangeText={t => setCustom(clampChantInput(t, cap))}
                 returnKeyType="done"
                 onSubmitEditing={submitCustom}
-                maxLength={4}
+                maxLength={cap === null ? 9 : String(cap).length}
               />
             </View>
             <Button

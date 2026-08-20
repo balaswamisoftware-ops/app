@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1091586239363",
+    "project_id": "srividyapitam",
+    "storage_bucket": "srividyapitam.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1091586239363:android:5459dfb24ca6b8051264b6",
+        "android_client_info": {
+          "package_name": "com.srividyapitam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBu3cb5WEEdWbC3JyEjQ6zCwSj9i0OSWg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

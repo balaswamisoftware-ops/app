@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Svg, {
   Circle,
   Defs,
@@ -15,8 +22,11 @@ import { BEADS_PER_MALA } from '../../constants/mission';
 import { formatNumber } from '../../utils/format';
 import { useMission } from '../../hooks/useMission';
 
-const SIZE = 300;
-const C = SIZE / 2;
+// Internal SVG coordinate space (kept constant). The mala is drawn in a
+// 300×300 viewBox and then displayed at a responsive size, so all bead math
+// below stays simple while the whole thing scales to fit any screen.
+const BASE = 300;
+const C = BASE / 2;
 const RING_R = 118; // radius the beads sit on
 const BEAD_R = 6.5; // a normal counting bead
 const MARKER_R = 8; // the 27/54/81 divider beads
@@ -43,6 +53,13 @@ const THREAD_DARK = '#9C7A14';
  */
 export function MalaCounter() {
   const { userCount, tap, flush, submitting, unsynced, pending } = useMission();
+
+  // Display size: never wider than the screen minus the surrounding padding
+  // (screen p-4 = 32 + card p-5 = 40 ≈ 72), capped at the 300px design size.
+  // Scales the whole mala down on small phones so it never overflows.
+  const { width: screenWidth } = useWindowDimensions();
+  const SIZE = Math.min(BASE, Math.max(220, screenWidth - 72));
+  const scale = SIZE / BASE;
 
   // 1-indexed bead within the current mala (1..108); 0 only before the first tap.
   const bead = userCount === 0 ? 0 : ((userCount - 1) % BEADS_PER_MALA) + 1;
@@ -191,7 +208,12 @@ export function MalaCounter() {
         accessibilityHint={`Bead ${bead} of ${BEADS_PER_MALA} in this mala`}
       >
         <View style={{ width: SIZE, height: SIZE }} className="items-center justify-center">
-          <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
+          <Svg
+            width={SIZE}
+            height={SIZE}
+            viewBox={`0 0 ${BASE} ${BASE}`}
+            style={{ position: 'absolute' }}
+          >
             <Defs>
               {/* Off-center radial gradients make each bead read as a lit sphere */}
               <RadialGradient id="beadDone" cx="35%" cy="30%" r="75%">
@@ -335,8 +357,9 @@ export function MalaCounter() {
               style={[
                 {
                   position: 'absolute',
-                  left: activePos.x - 14,
-                  top: activePos.y - 14,
+                  // activePos is in the 300-space; scale it to the display size.
+                  left: activePos.x * scale - 14,
+                  top: activePos.y * scale - 14,
                   width: 28,
                   height: 28,
                   borderRadius: 14,

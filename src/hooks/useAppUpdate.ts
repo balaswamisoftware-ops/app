@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { fetchAppConfig } from '../services/appConfigService';
 import { APP_VERSION, PLAY_STORE_URL, compareVersions } from '../config/version';
 import { useAdConfigStore } from '../store/useAdConfigStore';
+import { useAudioStore } from '../store/useAudioStore';
+import { useNoticeStore } from '../store/useNoticeStore';
+import { useChantLimitStore } from '../store/useChantLimitStore';
 
 export type UpdateStatus = 'checking' | 'ok' | 'optional' | 'required';
 
@@ -20,12 +23,23 @@ export function useAppUpdate() {
 
   useEffect(() => {
     let cancelled = false;
+    // Restore which announcement was already dismissed before the new one lands.
+    void useNoticeStore.getState().hydrate();
     (async () => {
       try {
         const cfg = await fetchAppConfig();
         if (cancelled) return;
         // Publish the admin-managed AdMob unit IDs to the ad store.
         useAdConfigStore.getState().setUnits(cfg.ads);
+        // Publish the admin-managed devotional audio clip.
+        useAudioStore.getState().setAudio(cfg.audio);
+        // Publish the admin announcement + mission pause switch.
+        useNoticeStore.getState().setNotice({
+          announcement: cfg.announcement,
+          missionActive: cfg.missionActive,
+        });
+        // Publish the admin-configured per-submission chant cap.
+        useChantLimitStore.getState().setLimit(cfg.chantLimit);
         setLatestVersion(cfg.latestVersion);
         setUpdateUrl(cfg.updateUrl);
         if (compareVersions(APP_VERSION, cfg.minVersion) < 0) setStatus('required');

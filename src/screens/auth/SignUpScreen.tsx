@@ -202,7 +202,7 @@ export function SignUpScreen({ navigation }: Props) {
         onPress={onSubmit}
       />
 
-      <View className="mt-4 flex-row justify-center gap-1">
+      <View className="mt-4 flex-row flex-wrap justify-center gap-1">
         <Text className="text-gray-500">Already have an account?</Text>
         <Pressable onPress={() => navigation.navigate('Login')} hitSlop={8}>
           <Text className="font-semibold text-primary">Login</Text>

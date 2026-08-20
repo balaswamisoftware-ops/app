@@ -11,6 +11,7 @@ import { Dialog } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { useAppUpdate } from '../hooks/useAppUpdate';
 import { useIntroInterstitial } from '../ads/useIntroInterstitial';
+import { usePushRegistration } from '../hooks/usePushRegistration';
 
 /** Minimum time the splash screen is shown on every launch (ms). */
 const SPLASH_MIN_MS = 5000;
@@ -26,6 +27,9 @@ export function RootNavigator() {
   const { status, hydrate } = useAuth();
   const [minTimePassed, setMinTimePassed] = useState(false);
   const update = useAppUpdate();
+
+  // Register this handset for admin broadcasts once a devotee is signed in.
+  usePushRegistration();
 
   // Show the one-time full-screen intro ad once the splash finishes and the
   // session is resolved. Preloads during the splash; no-op after first launch.

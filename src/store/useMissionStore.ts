@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { missionService } from '../services/missionService';
 import type { MissionStats } from '../types/mission';
-import { MAX_CHANTS_PER_ADD, PENDING_CHANTS_KEY } from '../constants/mission';
+import { PENDING_CHANTS_KEY } from '../constants/mission';
+import { effectiveChantMax, inputChantMax } from './useChantLimitStore';
 
 const DEFAULT_COMMUNITY_TARGET = 110000000; // 11 Crore
 
@@ -113,9 +114,11 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
   addChants: async (n: number) => {
     if (!Number.isFinite(n) || n <= 0) return;
     const k = Math.floor(n);
-    if (k > MAX_CHANTS_PER_ADD) {
+    // The cap is admin-configured; null means the devotee may enter any amount.
+    const cap = inputChantMax();
+    if (cap !== null && k > cap) {
       // Hard validation cap (not a network issue) — surface it.
-      set({ error: `You can add at most ${MAX_CHANTS_PER_ADD} chants at a time.` });
+      set({ error: `You can add at most ${cap.toLocaleString('en-IN')} chants at a time.` });
       throw new Error('over_max');
     }
     get().tap(k); // optimistic + persisted
@@ -129,8 +132,12 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
     set({ submitting: true, error: null });
     try {
       // Push in chunks so a single call never exceeds the per-request cap.
+      // The chunk follows the ADMIN cap, not just the transport ceiling: the
+      // server rejects anything larger, and beads tapped on the mala are
+      // legitimate counts that must still all get through — just in more,
+      // smaller requests.
       while (get().pending > 0) {
-        const chunk = Math.min(get().pending, MAX_CHANTS_PER_ADD);
+        const chunk = Math.min(get().pending, effectiveChantMax());
         try {
           await missionService.addChants(chunk);
         } catch {

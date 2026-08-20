@@ -114,7 +114,7 @@ export function LoginScreen({ navigation }: Props) {
         onPress={onSubmit}
       />
 
-      <View className="mt-6 flex-row items-center justify-center gap-1">
+      <View className="mt-6 flex-row flex-wrap items-center justify-center gap-1">
         <Text className="text-sm text-gray-500">Don't have an account?</Text>
         <Pressable
           onPress={() => navigation.navigate('SignUp')}

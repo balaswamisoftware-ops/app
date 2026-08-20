@@ -196,9 +196,13 @@ export function ChantHistoryScreen() {
         <View className="h-11 w-11 items-center justify-center rounded-xl bg-gray-100">
           <Flame size={22} color={colors.textSecondary} />
         </View>
-        <View>
+        <View className="flex-1">
           <Text className="text-sm text-gray-500">Total chanted</Text>
-          <Text className="text-2xl font-bold text-gray-900">
+          <Text
+            className="text-2xl font-bold text-gray-900"
+            adjustsFontSizeToFit
+            numberOfLines={1}
+          >
             {formatNumber(total)}
           </Text>
         </View>

@@ -8,6 +8,7 @@ import type {
 } from '../types/auth';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
+import { unregisterFromPush } from '../services/pushService';
 
 interface AuthStoreState {
   status: AuthStatus;
@@ -92,11 +93,15 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 
   logout: async () => {
+    // Drop the push registration BEFORE the session goes away — the RPC needs
+    // the devotee's own token to delete their row.
+    await unregisterFromPush();
     await authService.logout();
     set({ user: null, status: 'unauthenticated' });
   },
 
   deleteAccount: async () => {
+    await unregisterFromPush();
     await authService.deleteAccount();
     set({ user: null, status: 'unauthenticated' });
   },

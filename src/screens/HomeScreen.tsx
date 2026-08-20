@@ -18,6 +18,12 @@ import { formatNumber } from '../utils/format';
 import { useMission } from '../hooks/useMission';
 import { useAuthStore } from '../store/useAuthStore';
 import { AdBanner } from '../components/ads/AdBanner';
+import { DevotionalAudioCard } from '../components/audio/DevotionalAudioCard';
+import {
+  AnnouncementCard,
+  MissionPausedCard,
+} from '../components/notice/AnnouncementCard';
+import { useNoticeStore } from '../store/useNoticeStore';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
@@ -67,6 +73,7 @@ function getMilestoneMessage(percent: number, userCount: number): string {
 export function HomeScreen({ navigation }: Props) {
   const mission = useMission();
   const user = useAuthStore(s => s.user);
+  const missionActive = useNoticeStore(s => s.missionActive);
   const firstName = user?.fullName?.split(' ')[0] ?? 'Devotee';
 
   const hasStarted = mission.userCount > 0;
@@ -104,6 +111,14 @@ export function HomeScreen({ navigation }: Props) {
 
         {/* Ad banner scrolls with the content, right under the header */}
 
+        {/* Admin broadcast + mission pause notice — above everything, because
+            they change what the devotee can do on this screen. */}
+        <AnnouncementCard />
+        <MissionPausedCard />
+
+        {/* Admin-managed devotional audio (shown only when enabled) */}
+        <DevotionalAudioCard />
+
         {/* Hero greeting banner with the primary action right where the eye lands */}
         <View className="overflow-hidden rounded-3xl bg-primary p-6">
           <Text
@@ -133,10 +148,17 @@ export function HomeScreen({ navigation }: Props) {
           {!mission.completed && (
             <View className="mt-4">
               <Button
-                label={hasStarted ? 'Continue Chanting' : 'Start Chanting'}
+                label={
+                  !missionActive
+                    ? 'Chanting paused'
+                    : hasStarted
+                    ? 'Continue Chanting'
+                    : 'Start Chanting'
+                }
                 leftIcon={Flame}
                 size="lg"
                 variant="secondary"
+                disabled={!missionActive}
                 onPress={() => navigation.navigate('Chanting')}
               />
             </View>
@@ -211,7 +233,7 @@ export function HomeScreen({ navigation }: Props) {
           />
         </View>
 
-        {/* Community mission — shared 11 Crore goal */}
+        {/* // Community mission — shared 11 Crore goal
         <View className="overflow-hidden rounded-2xl bg-primary-light p-5">
           <View className="flex-row items-center gap-2">
             <Users size={16} color={colors.primary} />
@@ -249,7 +271,7 @@ export function HomeScreen({ navigation }: Props) {
             Every devotee’s chants add up to our shared goal of 11,00,00,000 “Om
             Namah Shivaya”.
           </Text>
-        </View>
+        </View> */}
 
         {/* How it works — only shown until the devotee gets going */}
         {!hasStarted && (
