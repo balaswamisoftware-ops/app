@@ -10,7 +10,11 @@ import { supabaseMissionService } from './supabaseMissionService';
  */
 export interface MissionService {
   getStats(): Promise<MissionStats>;
-  addChants(delta: number): Promise<IncrementResult>;
+  /**
+   * Add `delta` chants. `txnId` is an idempotency key: retrying the same txnId
+   * (after a lost response) applies the delta at most once on the server.
+   */
+  addChants(delta: number, txnId?: string): Promise<IncrementResult>;
   /** The devotee's chant submissions, newest first. */
   getMyLogs(): Promise<ChantLog[]>;
 }

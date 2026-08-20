@@ -13,6 +13,13 @@ export const BEADS_PER_MALA = 108;
 export const PENDING_CHANTS_KEY = '@sv/pending-chants';
 
 /**
+ * AsyncStorage key for the chunk currently being flushed: `{ txnId, chunk }`.
+ * Persisting it lets a retry (after a lost response / crash) reuse the SAME
+ * txnId so the idempotent `add_chants(delta, txn_id)` RPC never double-counts.
+ */
+export const PENDING_INFLIGHT_KEY = '@sv/pending-inflight';
+
+/**
  * Clamp raw text from a chant-count input to digits within [0, max].
  *
  * Pass `max = null` when the admin has switched the restriction off — the text

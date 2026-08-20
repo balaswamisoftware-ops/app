@@ -28,9 +28,14 @@ export const supabaseMissionService: MissionService = {
     };
   },
 
-  async addChants(delta: number): Promise<IncrementResult> {
+  async addChants(delta: number, txnId?: string): Promise<IncrementResult> {
     const supabase = requireClient();
-    const { data, error } = await supabase.rpc('add_chants', { delta });
+    // `txn_id` is the idempotency key — a retry of the same id is a no-op on the
+    // server, so a lost response can be retried safely without double-counting.
+    const { data, error } = await supabase.rpc('add_chants', {
+      delta,
+      txn_id: txnId ?? null,
+    });
     if (error) throw new Error(error.message);
     const d = (data ?? {}) as Partial<IncrementResult>;
     return {

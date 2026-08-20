@@ -109,6 +109,10 @@ export function AppNavigator() {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
+          // Leaving the Home tab resets its stack back to Home, so returning
+          // always lands on the dashboard with a working "Start Chanting" — the
+          // stack never gets stuck on Chanting/Donation after tab-hopping.
+          popToTopOnBlur: true,
         }}
       />
       <Tab.Screen

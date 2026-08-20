@@ -209,7 +209,7 @@ export function ChantingScreen({ navigation }: Props) {
         onPress={() => navigation.getParent()?.navigate('HistoryTab' as never)}
       />
 
-      <Button
+      {/* <Button
         label={
           userCount > 0
             ? 'Complete Chanting & Donate ₹216'
@@ -219,7 +219,7 @@ export function ChantingScreen({ navigation }: Props) {
         leftIcon={HandHeart}
         disabled={userCount <= 0}
         onPress={onComplete}
-      />
+      /> */}
 
       <Dialog
         visible={confirmOpen}

@@ -9,6 +9,7 @@ import type {
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
 import { unregisterFromPush } from '../services/pushService';
+import { useMissionStore } from './useMissionStore';
 
 interface AuthStoreState {
   status: AuthStatus;
@@ -97,12 +98,16 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     // the devotee's own token to delete their row.
     await unregisterFromPush();
     await authService.logout();
+    // Clear this devotee's mission total + offline queue so nothing bleeds into
+    // the next devotee who signs in on the same device.
+    useMissionStore.getState().reset();
     set({ user: null, status: 'unauthenticated' });
   },
 
   deleteAccount: async () => {
     await unregisterFromPush();
     await authService.deleteAccount();
+    useMissionStore.getState().reset();
     set({ user: null, status: 'unauthenticated' });
   },
 

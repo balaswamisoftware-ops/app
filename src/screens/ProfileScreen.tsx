@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,11 +28,13 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 
 import {
   Banner,
   Button,
   Card,
+  Dialog,
   IconChip,
   Input,
   Select,
@@ -127,18 +129,21 @@ export function ProfileScreen({ navigation }: Props) {
   } = useProfile();
 
   const keyboardHeight = useKeyboardHeight();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
-  // Confirm before logging out — it's destructive and easy to tap by mistake.
-  const confirmLogout = () => {
-    Alert.alert(
-      'Log out?',
-      'You can sign back in with your mobile number any time.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: logout },
-      ],
-    );
-  };
+  // Re-pull the profile whenever the tab regains focus (e.g. after an admin
+  // verifies a donation), so it never shows stale data — but never while the
+  // user is mid-edit, which would clobber their unsaved input.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isEditing) void refresh();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing]),
+  );
+
+  // Confirm before logging out — shown in the app's own modal (not a native
+  // Alert) so it matches the rest of the UI.
+  const confirmLogout = () => setLogoutOpen(true);
 
   // Permanent account deletion — double-confirmed, as it cannot be undone.
   const confirmDeleteAccount = () => {
@@ -398,6 +403,19 @@ export function ProfileScreen({ navigation }: Props) {
           </>
         )}
       </ScrollView>
+
+      <Dialog
+        visible={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        icon={LogOut}
+        tone="danger"
+        title="Log out?"
+        message="You can sign back in with your mobile number any time."
+        actions={[
+          { label: 'Log out', variant: 'primary', onPress: logout },
+          { label: 'Cancel', variant: 'ghost' },
+        ]}
+      />
     </KeyboardAvoidingView>
   );
 }

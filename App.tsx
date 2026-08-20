@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { getSupabaseClient } from './src/services/supabaseClient';
+import { refreshRemoteConfig } from './src/services/refreshRemoteConfig';
 import { useMissionStore } from './src/store/useMissionStore';
 
 // Initialize AdMob once, guarded so it's a no-op until the native rebuild.
@@ -41,6 +42,9 @@ function App() {
         supabase.auth.startAutoRefresh();
         // Retry syncing any chants counted while offline.
         void useMissionStore.getState().flush();
+        // Re-pull admin settings (chant cap, mission pause, announcement, ads,
+        // audio) so changes reflect on reopen — no full app restart needed.
+        void refreshRemoteConfig();
       } else {
         supabase.auth.stopAutoRefresh();
       }

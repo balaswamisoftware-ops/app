@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -8,10 +8,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { AlertCircle } from 'lucide-react-native';
 import { colors } from '../../constants/theme';
 import { logoImage } from '../../assets/logo';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface AuthLayoutProps {
   title: string;
@@ -27,6 +29,14 @@ interface AuthLayoutProps {
  */
 export function AuthLayout({ title, subtitle, error, children }: AuthLayoutProps) {
   const keyboardHeight = useKeyboardHeight();
+
+  // Clear any stale auth error when this screen gains focus, so an error from
+  // one auth screen (e.g. a wrong Login) doesn't linger on the next (SignUp).
+  useFocusEffect(
+    useCallback(() => {
+      useAuthStore.getState().clearError();
+    }, []),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>

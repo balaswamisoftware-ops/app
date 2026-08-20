@@ -152,6 +152,9 @@ export function ChantHistoryScreen() {
         lastGateAt = now;
         setShowAd(true);
       }
+      // Hide the ad if the user leaves the tab mid-countdown, so it never
+      // overlays whatever tab they switched to.
+      return () => setShowAd(false);
     }, []),
   );
 

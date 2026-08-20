@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { HandHeart, Clock, BadgeCheck, XCircle } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -47,17 +48,21 @@ export function SevaStatusCard() {
   const [donation, setDonation] = useState<Donation | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    donationService
-      .getMyDonation()
-      .then(d => active && setDonation(d))
-      .catch(() => {})
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Re-fetch whenever the Profile tab regains focus, so an admin's decision
+  // (verify / reject) shows without needing an app restart.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      donationService
+        .getMyDonation()
+        .then(d => active && setDonation(d))
+        .catch(() => {})
+        .finally(() => active && setLoading(false));
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   if (loading) return null;
 
