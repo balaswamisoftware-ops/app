@@ -6,13 +6,18 @@ import { Button, Card, IconChip } from '../ui';
 import { locationService } from '../../services/locationService';
 
 /**
- * Opt-in card for the community world map. It only appears while the devotee
- * has NOT granted location — once permission is given the card disappears (no
- * repeated asking). Re-checks on every focus so granting elsewhere (e.g. the
- * one-time launch prompt) hides it immediately.
+ * Opt-in card for the community world map. It appears while the devotee has NOT
+ * yet had a location SAVED, and hides once one is stored.
+ *
+ * It deliberately keys off the saved row rather than the OS permission: a
+ * granted permission says nothing about whether the save actually succeeded
+ * (an Android device commonly has no GPS fix in the seconds right after the
+ * dialog is accepted). Gating on permission hid this card the moment "Allow"
+ * was tapped, leaving a devotee whose save had failed with no way to retry and
+ * no sign anything was wrong.
  */
 export function LocationCard() {
-  const [granted, setGranted] = useState<boolean | null>(null); // null = checking
+  const [shared, setShared] = useState<boolean | null>(null); // null = checking
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -20,9 +25,9 @@ export function LocationCard() {
     useCallback(() => {
       let active = true;
       locationService
-        .hasPermission()
-        .then(g => active && setGranted(g))
-        .catch(() => active && setGranted(false));
+        .hasSavedLocation()
+        .then(s => active && setShared(s))
+        .catch(() => active && setShared(false));
       return () => {
         active = false;
       };
@@ -34,17 +39,25 @@ export function LocationCard() {
     setMessage(null);
     try {
       const ok = await locationService.shareLocation();
-      if (ok) setGranted(true); // permission granted → card hides
-      else setMessage('Permission was declined. You can allow it in Settings anytime.');
+      if (!ok) {
+        setMessage('Permission was declined. You can allow it in Settings anytime.');
+        return;
+      }
+      // Confirm it really landed before hiding the card.
+      setShared(await locationService.hasSavedLocation());
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Could not share your location.');
+      setMessage(
+        e instanceof Error
+          ? `${e.message} Please make sure location is switched on, then try again.`
+          : 'Could not share your location. Please try again.',
+      );
     } finally {
       setBusy(false);
     }
   };
 
-  // Still checking, or already granted → show nothing.
-  if (granted === null || granted) return null;
+  // Still checking, or already stored → show nothing.
+  if (shared === null || shared) return null;
 
   return (
     <Card title="Community Map">
@@ -60,7 +73,7 @@ export function LocationCard() {
         {message ? <Text className="text-xs text-gray-500">{message}</Text> : null}
 
         <Button
-          label="Share my location"
+          label={message ? 'Try again' : 'Share my location'}
           leftIcon={MapPin}
           onPress={share}
           isLoading={busy}
