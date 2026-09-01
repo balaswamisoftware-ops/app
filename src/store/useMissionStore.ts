@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { missionService } from '../services/missionService';
 import type { MissionStats } from '../types/mission';
 import { PENDING_CHANTS_KEY, PENDING_INFLIGHT_KEY } from '../constants/mission';
-import { effectiveChantMax, inputChantMax } from './useChantLimitStore';
 import { chantCeiling, useChantLevelStore } from './useChantLevelStore';
 import { formatNumber } from '../utils/format';
 
@@ -173,13 +172,9 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
   addChants: async (n: number) => {
     if (!Number.isFinite(n) || n <= 0) return;
     const k = Math.floor(n);
-    // The cap is admin-configured; null means the devotee may enter any amount.
-    const cap = inputChantMax();
-    if (cap !== null && k > cap) {
-      // Hard validation cap (not a network issue) — surface it.
-      set({ error: `You can add at most ${cap.toLocaleString('en-IN')} chants at a time.` });
-      throw new Error('over_max');
-    }
+    // No per-submission cap: a devotee may add any amount up to the level
+    // ceiling in one go (e.g. a custom 1,00,000). `tap()` clamps to the room
+    // left, and the server clamps to the ceiling too.
     const ceiling = chantCeiling();
     if (get().userCount >= ceiling) {
       set({
@@ -200,18 +195,17 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
     flushing = true;
     set({ submitting: true, error: null });
     try {
-      // Push in chunks so a single call never exceeds the per-request cap.
-      // The chunk follows the ADMIN cap, not just the transport ceiling: the
-      // server rejects anything larger, and beads tapped on the mala are
-      // legitimate counts that must still all get through — just in more,
-      // smaller requests.
+      // Push the whole pending amount in ONE chunk (bounded only by the level
+      // ceiling), so a large custom count like 1,00,000 syncs in a single
+      // request rather than being split into many small ones.
       while (get().pending > 0) {
         // Resume a chunk that was mid-flight (its response may have been lost, or
         // the app was killed) so the retry reuses the SAME idempotency key and
         // the server applies it at most once. Otherwise start a fresh chunk.
         let job = await readInflight();
         if (!job || job.chunk > get().pending) {
-          job = { txnId: uuidv4(), chunk: Math.min(get().pending, effectiveChantMax()) };
+          const transportMax = Math.max(1, chantCeiling());
+          job = { txnId: uuidv4(), chunk: Math.min(get().pending, transportMax) };
           await writeInflight(job);
         }
         let res;

@@ -58,9 +58,12 @@ react {
 }
 
 /**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ * R8/Proguard minification. Turned OFF as a stability hedge: a minified release
+ * can strip classes needed at runtime and crash. The Play "R8 optimization"
+ * recommendation is optional — stability outweighs the size saving. Re-enable
+ * only after confirming crash-free with a full keep-rule pass + smoke test.
  */
-def enableProguardInReleaseBuilds = true
+def enableProguardInReleaseBuilds = false
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -90,8 +93,8 @@ android {
         applicationId "com.srividyapitam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.5.0"
+        versionCode 7
+        versionName "1.6.0"
     }
     signingConfigs {
         debug {

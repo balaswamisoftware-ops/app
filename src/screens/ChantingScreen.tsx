@@ -138,7 +138,7 @@ export function ChantingScreen({ navigation }: Props) {
 
       <MissionPausedCard />
 
-      <LevelCard />
+      {/* <LevelCard /> */}
 
       {/* Past the ceiling there is nothing left to add, so the whole add UI is
           replaced rather than left on screen doing nothing. */}
@@ -219,10 +219,14 @@ export function ChantingScreen({ navigation }: Props) {
                 placeholder="e.g. 1008"
                 keyboardType="number-pad"
                 value={custom}
-                onChangeText={t => setCustom(clampChantInput(t, cap))}
+                // The custom field is NOT bound by the per-submission preset cap
+                // — a devotee may enter any amount up to the room left in their
+                // seva (the level ceiling). The FE clamps to that; the server
+                // clamps to the ceiling too.
+                onChangeText={t => setCustom(clampChantInput(t, roomLeft))}
                 returnKeyType="done"
                 onSubmitEditing={submitCustom}
-                maxLength={String(cap).length}
+                maxLength={String(Math.max(1, roomLeft)).length}
               />
             </View>
             <Button
@@ -233,11 +237,9 @@ export function ChantingScreen({ navigation }: Props) {
             />
           </View>
           <Text className="mt-1.5 text-xs text-gray-500">
-            {/* Which of the two limits is binding matters to the devotee: one
-                resets on the next submission, the other is the end of the seva. */}
-            {adminCap !== null && cap < adminCap
-              ? `Only ${formatNumber(cap)} chants remain in your seva`
-              : `Up to ${formatNumber(cap)} at a time`}
+            {atCeiling
+              ? 'You have completed your seva 🙏'
+              : `Enter any amount — up to ${formatNumber(roomLeft)} remain in your seva`}
           </Text>
 
           {submitting ? (

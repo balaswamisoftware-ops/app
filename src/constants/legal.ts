@@ -144,6 +144,7 @@ const PRIVACY: LegalDocument = {
         'Devotional activity: your chant counts and chanting history.',
         'Donation details: the donation amount, UPI transaction ID, and the payment screenshot you upload for verification.',
         'Technical & advertising data: device information and advertising identifiers used by ad and analytics providers to serve and measure ads.',
+        'Location (optional): if — and only if — you choose to share it from your Profile, your device location (latitude and longitude) so you can appear on the community world map. This is entirely optional, is never collected without your permission, and you can remove it at any time.',
       ],
     },
     {
@@ -152,6 +153,7 @@ const PRIVACY: LegalDocument = {
         'To create and manage your devotee account and authenticate you.',
         'To record your chant counts and show your progress and history.',
         'To verify and record your seva donations.',
+        'To show, only if you opt in, your location on the community world map; you can withdraw it at any time from your Profile.',
         'To display advertisements that keep the App free.',
         'To maintain the security, integrity, and proper functioning of the App.',
       ],

@@ -4,6 +4,11 @@
     <!-- Android 13+ requires a runtime grant before any notification is shown.
          Requested by pushService.registerForPush(). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Optional, consent-gated: the devotee may share their APPROXIMATE
+         (coarse / city-level) location to appear on the community world map
+         (Profile → Community Map). Requested at runtime only when they opt in.
+         Coarse only — precise location is not needed for the map. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
       android:name=".MainApplication"

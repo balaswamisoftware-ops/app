@@ -40,6 +40,7 @@ import {
   Select,
 } from '../components/ui';
 import { SevaStatusCard } from '../components/profile/SevaStatusCard';
+import { LocationCard } from '../components/profile/LocationCard';
 import { NAKSHATRAMS } from '../constants/nakshatram';
 import { colors } from '../constants/theme';
 import { formatMobile } from '../utils/format';
@@ -351,6 +352,8 @@ export function ProfileScreen({ navigation }: Props) {
             </Card>
 
             <SevaStatusCard />
+
+            <LocationCard />
 
             <Card title="Legal & Policies">
               <LegalRow

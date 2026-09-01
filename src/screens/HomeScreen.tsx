@@ -16,6 +16,7 @@ import { Button, Card, ProgressBar } from '../components/ui';
 import { colors } from '../constants/theme';
 import { formatNumber } from '../utils/format';
 import { useMission } from '../hooks/useMission';
+import { useLocationPrompt } from '../hooks/useLocationPrompt';
 import { useAuthStore } from '../store/useAuthStore';
 import { AdBanner } from '../components/ads/AdBanner';
 import { LevelCard } from '../components/chant/LevelCard';
@@ -82,6 +83,8 @@ function getMilestoneMessage(
 }
 
 export function HomeScreen({ navigation }: Props) {
+  // Ask for location once per app version, on first entry after an update.
+  useLocationPrompt();
   const mission = useMission();
   const user = useAuthStore(s => s.user);
   const missionActive = useNoticeStore(s => s.missionActive);
