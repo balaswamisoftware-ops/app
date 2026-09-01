@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   Flame,
-  Target,
+  Award,
   Sparkles,
   CheckCircle2,
   Users,
@@ -18,6 +18,7 @@ import { formatNumber } from '../utils/format';
 import { useMission } from '../hooks/useMission';
 import { useAuthStore } from '../store/useAuthStore';
 import { AdBanner } from '../components/ads/AdBanner';
+import { LevelCard } from '../components/chant/LevelCard';
 import { DevotionalAudioCard } from '../components/audio/DevotionalAudioCard';
 import {
   AnnouncementCard,
@@ -59,15 +60,25 @@ function Stat({
   );
 }
 
-/** Encouragement message that changes as the devotee progresses. */
-function getMilestoneMessage(percent: number, userCount: number): string {
+/**
+ * Encouragement message that changes as the devotee progresses. `percent` is
+ * progress within the CURRENT level, so the message keeps pace with the goal the
+ * devotee is actually chasing rather than fading out after the first lakh.
+ */
+function getMilestoneMessage(
+  percent: number,
+  userCount: number,
+  nextLevelName: string | null,
+): string {
   if (userCount === 0) return 'Begin your seva today — every chant counts.';
+  if (!nextLevelName && percent >= 100) return 'Seva complete. Hara Hara Mahadeva!';
   if (percent < 10) return 'A beautiful start. Keep the rhythm going!';
   if (percent < 25) return 'Your dedication is growing, one chant at a time.';
   if (percent < 50) return 'Steady progress — the halfway mark is in sight.';
   if (percent < 75) return 'More than halfway there. Har Har Mahadev!';
-  if (percent < 100) return 'The final stretch — your seva is almost complete!';
-  return 'Seva complete. Hara Hara Mahadeva!';
+  return nextLevelName
+    ? `The final stretch — ${nextLevelName} is almost yours!`
+    : 'The final stretch — your seva is almost complete!';
 }
 
 export function HomeScreen({ navigation }: Props) {
@@ -80,8 +91,13 @@ export function HomeScreen({ navigation }: Props) {
   const malasCompleted = Math.floor(mission.userCount / BEADS_PER_MALA);
 
   const milestoneMessage = useMemo(
-    () => getMilestoneMessage(mission.percent, mission.userCount),
-    [mission.percent, mission.userCount],
+    () =>
+      getMilestoneMessage(
+        mission.levelPercent,
+        mission.userCount,
+        mission.nextLevel?.name ?? null,
+      ),
+    [mission.levelPercent, mission.userCount, mission.nextLevel],
   );
 
   // Refresh the mission totals whenever the tab regains focus.
@@ -136,37 +152,47 @@ export function HomeScreen({ navigation }: Props) {
             Namaste, {firstName} 🙏
           </Text>
           <Text className="mt-1 text-sm leading-5 text-white/90">
-            {mission.completed
-              ? 'You have completed your personal seva. Hara Hara Mahadeva!'
+            {mission.atCeiling
+              ? `All ${formatNumber(
+                  mission.ceiling,
+                )} chants are complete. Hara Hara Mahadeva!`
               : hasStarted
-              ? `${formatNumber(
-                  mission.remaining,
-                )} chants remain in your 1,00,000 seva.`
-              : 'Chant “Om Namah Shivaya” 1,00,000 times to complete your personal seva.'}
+              ? mission.nextLevel
+                ? `${formatNumber(mission.toNextLevel)} chants to reach ${
+                    mission.nextLevel.name
+                  }.`
+                : `${formatNumber(
+                    mission.roomLeft,
+                  )} chants remain in your final level.`
+              : `Chant “Om Namah Shivaya” ${formatNumber(
+                  mission.level.to,
+                )} times to reach ${mission.level.name}.`}
           </Text>
 
-          {!mission.completed && (
-            <View className="mt-4">
-              <Button
-                label={
-                  !missionActive
-                    ? 'Chanting paused'
-                    : hasStarted
-                    ? 'Continue Chanting'
-                    : 'Start Chanting'
-                }
-                leftIcon={Flame}
-                size="lg"
-                variant="secondary"
-                disabled={!missionActive}
-                onPress={() => navigation.navigate('Chanting')}
-              />
-            </View>
-          )}
+          {/* Shown even once a level is finished: this is the only route into the
+              Chanting screen. Only the ceiling actually closes it. */}
+          <View className="mt-4">
+            <Button
+              label={
+                !missionActive
+                  ? 'Chanting paused'
+                  : mission.atCeiling
+                  ? 'All chants complete'
+                  : hasStarted
+                  ? 'Continue Chanting'
+                  : 'Start Chanting'
+              }
+              leftIcon={Flame}
+              size="lg"
+              variant="secondary"
+              disabled={!missionActive || mission.atCeiling}
+              onPress={() => navigation.navigate('Chanting')}
+            />
+          </View>
         </View>
 
         {/* Completed banner sits near the top so the celebration is seen first */}
-        {mission.completed && (
+        {mission.atCeiling && (
           <View
             className="flex-row items-center justify-center gap-2 rounded-2xl border border-green-200 bg-green-50 p-4"
             accessible
@@ -178,6 +204,9 @@ export function HomeScreen({ navigation }: Props) {
             </Text>
           </View>
         )}
+
+        {/* The level ladder — the near-term goal, above the whole-journey card */}
+        <LevelCard />
 
         {/* Personal progress — the single source of truth for your numbers */}
         <View className="rounded-2xl border border-gray-100 bg-white p-5">
@@ -194,19 +223,25 @@ export function HomeScreen({ navigation }: Props) {
                 {formatNumber(mission.userCount)}
               </Text>
             </View>
+            {/* Measured against the CEILING, so this card and the level card
+                never tell the devotee two different stories. */}
             <Text className="shrink-0 text-sm text-gray-400">
-              of {formatNumber(mission.target)}
+              of {formatNumber(mission.ceiling)}
             </Text>
           </View>
           <View className="mt-3">
-            <ProgressBar value={mission.percent} />
+            <ProgressBar value={mission.ceilingPercent} />
           </View>
           <View className="mt-2 flex-row justify-between">
             <Text className="shrink-0 text-xs font-medium text-primary-dark">
-              {mission.percent.toFixed(1)}% complete
+              {mission.atCeiling
+                ? 'Completed'
+                : `${mission.ceilingPercent.toFixed(1)}% complete`}
             </Text>
             <Text className="shrink pl-2 text-right text-xs text-gray-500">
-              {formatNumber(mission.remaining)} remaining
+              {mission.atCeiling
+                ? 'Every level finished'
+                : `${formatNumber(mission.roomLeft)} remaining`}
             </Text>
           </View>
           <Text className="mt-3 text-xs leading-4 text-gray-500">
@@ -227,9 +262,9 @@ export function HomeScreen({ navigation }: Props) {
             value={`${mission.userCount % BEADS_PER_MALA} / ${BEADS_PER_MALA}`}
           />
           <Stat
-            icon={Target}
-            label="Seva goal"
-            value={formatNumber(mission.target)}
+            icon={Award}
+            label={`Level ${mission.levelIndex} of ${mission.levelTotal}`}
+            value={mission.level.name}
           />
         </View>
 
@@ -277,8 +312,9 @@ export function HomeScreen({ navigation }: Props) {
         {!hasStarted && (
           <Card title="Your Seva">
             <Text className="text-base leading-6 text-gray-600">
-              Chant “Om Namah Shivaya” 1,00,000 times to complete your personal
-              seva. Add your count any time — there’s no daily limit.
+              Chant “Om Namah Shivaya” through {mission.levelTotal} levels, from{' '}
+              {mission.levels[0]?.name} up to {formatNumber(mission.ceiling)}{' '}
+              chants. Add your count any time — there’s no daily limit.
             </Text>
           </Card>
         )}

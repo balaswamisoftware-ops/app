@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Plus, History, HandHeart } from 'lucide-react-native';
+import { Plus, History, HandHeart, Trophy } from 'lucide-react-native';
 
 import type { HomeStackParamList } from '../navigation/AppNavigator';
 import { Banner, Button, Dialog, Input } from '../components/ui';
@@ -21,6 +21,8 @@ import { useMission } from '../hooks/useMission';
 import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 import { AdBanner } from '../components/ads/AdBanner';
 import { MalaCounter } from '../components/chant/MalaCounter';
+import { LevelCard } from '../components/chant/LevelCard';
+import { LevelUpDialog } from '../components/chant/LevelUpDialog';
 import { MissionPausedCard } from '../components/notice/AnnouncementCard';
 import { useNoticeStore } from '../store/useNoticeStore';
 import { useChantLimitStore } from '../store/useChantLimitStore';
@@ -31,8 +33,19 @@ const PRESETS = [54, 108, 216, 300, 400];
 type Mode = 'input' | 'mala';
 
 export function ChantingScreen({ navigation }: Props) {
-  const { userCount, target, remaining, submitting, error, clearError, addChants } =
-    useMission();
+  const {
+    userCount,
+    level,
+    nextLevel,
+    toNextLevel,
+    ceiling,
+    atCeiling,
+    roomLeft,
+    submitting,
+    error,
+    clearError,
+    addChants,
+  } = useMission();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   // An admin can pause the mission from the portal; while paused, nothing on
@@ -42,11 +55,15 @@ export function ChantingScreen({ navigation }: Props) {
   // devotee enters whatever they wish.
   const limitEnabled = useChantLimitStore(s => s.enabled);
   const limitMax = useChantLimitStore(s => s.max);
-  const cap = limitEnabled ? Math.max(1, limitMax) : null;
+  const adminCap = limitEnabled ? Math.max(1, limitMax) : null;
+  // Near the ceiling the room left is the tighter of the two limits — offering
+  // more than that would only be clipped by the server.
+  const cap =
+    adminCap === null ? roomLeft : Math.min(adminCap, roomLeft);
   // A preset above the cap would just error on tap, so don't offer it — and if
   // the cap sits below every preset, offer the cap itself rather than an empty row.
-  const allowed = cap === null ? PRESETS : PRESETS.filter(n => n <= cap);
-  const presets = allowed.length > 0 ? allowed : cap !== null ? [cap] : PRESETS;
+  const allowed = PRESETS.filter(n => n <= cap);
+  const presets = allowed.length > 0 ? allowed : [cap];
   const [mode, setMode] = useState<Mode>('input');
   const [custom, setCustom] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -104,7 +121,16 @@ export function ChantingScreen({ navigation }: Props) {
           {formatNumber(userCount)}
         </Text>
         <Text className="mt-1 text-xs text-gray-400">
-          of {formatNumber(target)} · {formatNumber(remaining)} to go
+          {atCeiling
+            ? `of ${formatNumber(ceiling)} · Completed`
+            : `of ${formatNumber(ceiling)} · ${formatNumber(roomLeft)} to go`}
+        </Text>
+        <Text className="mt-1 text-xs font-medium text-primary-dark">
+          {atCeiling
+            ? `${level.name} · final level complete`
+            : nextLevel
+            ? `${level.name} · ${formatNumber(toNextLevel)} to ${nextLevel.name}`
+            : `${level.name} · final level`}
         </Text>
       </View>
 
@@ -112,6 +138,22 @@ export function ChantingScreen({ navigation }: Props) {
 
       <MissionPausedCard />
 
+      <LevelCard />
+
+      {/* Past the ceiling there is nothing left to add, so the whole add UI is
+          replaced rather than left on screen doing nothing. */}
+      {atCeiling ? (
+        <View className="items-center rounded-2xl border border-green-200 bg-green-50 p-6">
+          <Trophy size={28} color={colors.success} />
+          <Text className="mt-3 text-center text-base font-bold text-green-800">
+            All {formatNumber(ceiling)} chants complete
+          </Text>
+          <Text className="mt-1 text-center text-xs leading-4 text-green-700">
+            You have finished every level of the seva. Hara Hara Mahadeva! 🙏
+          </Text>
+        </View>
+      ) : (
+        <>
       {/* Mode switch: Quick Add | Mala */}
       <View
         className={`flex-row rounded-xl bg-gray-100 p-1 ${
@@ -180,7 +222,7 @@ export function ChantingScreen({ navigation }: Props) {
                 onChangeText={t => setCustom(clampChantInput(t, cap))}
                 returnKeyType="done"
                 onSubmitEditing={submitCustom}
-                maxLength={cap === null ? 9 : String(cap).length}
+                maxLength={String(cap).length}
               />
             </View>
             <Button
@@ -191,9 +233,11 @@ export function ChantingScreen({ navigation }: Props) {
             />
           </View>
           <Text className="mt-1.5 text-xs text-gray-500">
-            {cap === null
-              ? 'Enter any amount'
-              : `Up to ${cap.toLocaleString('en-IN')} at a time`}
+            {/* Which of the two limits is binding matters to the devotee: one
+                resets on the next submission, the other is the end of the seva. */}
+            {adminCap !== null && cap < adminCap
+              ? `Only ${formatNumber(cap)} chants remain in your seva`
+              : `Up to ${formatNumber(cap)} at a time`}
           </Text>
 
           {submitting ? (
@@ -203,6 +247,8 @@ export function ChantingScreen({ navigation }: Props) {
             </View>
           ) : null}
         </View>
+      )}
+        </>
       )}
 
       {/* History + complete */}
@@ -241,6 +287,9 @@ export function ChantingScreen({ navigation }: Props) {
           { label: 'Keep chanting' },
         ]}
       />
+
+      {/* Celebrates crossing into a new level, wherever the count came from */}
+      <LevelUpDialog />
       </ScrollView>
     </KeyboardAvoidingView>
   );

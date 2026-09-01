@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ChantLog, IncrementResult, MissionStats } from '../types/mission';
 import { delay, generateId } from '../utils/misc';
 import type { MissionService } from './missionService';
+import { DEFAULT_LEVELS, ceilingOf } from '../constants/levels';
 
 const USER_KEY = '@sv/chant-user';
 const COMMUNITY_KEY = '@sv/chant-community';
@@ -9,6 +10,7 @@ const LOGS_KEY = '@sv/chant-logs';
 const TARGET = 100000;
 const COMMUNITY_TARGET = 110000000; // 11 Crore
 const DONATION = 216;
+const CEILING = ceilingOf(DEFAULT_LEVELS);
 
 async function readInt(key: string): Promise<number> {
   const raw = await AsyncStorage.getItem(key);
@@ -35,20 +37,27 @@ export const mockMissionService: MissionService = {
       userCount,
       donationAmount: DONATION,
       completed: userCount >= TARGET,
+      levels: DEFAULT_LEVELS,
+      ceiling: CEILING,
     };
   },
 
   async addChants(delta: number): Promise<IncrementResult> {
     await delay(150);
-    const userCount = (await readInt(USER_KEY)) + delta;
-    const communityTotal = (await readInt(COMMUNITY_KEY)) + delta;
+    const before = await readInt(USER_KEY);
+    // Mirrors the server: the ceiling clamps the delta, it never throws.
+    const accepted = Math.max(0, Math.min(delta, CEILING - before));
+    const userCount = before + accepted;
+    const communityTotal = (await readInt(COMMUNITY_KEY)) + accepted;
     const logs = await readLogs();
-    logs.unshift({
-      id: generateId(),
-      amount: delta,
-      kind: 'add',
-      createdAt: new Date().toISOString(),
-    });
+    if (accepted > 0) {
+      logs.unshift({
+        id: generateId(),
+        amount: accepted,
+        kind: 'add',
+        createdAt: new Date().toISOString(),
+      });
+    }
     await Promise.all([
       AsyncStorage.setItem(USER_KEY, String(userCount)),
       AsyncStorage.setItem(COMMUNITY_KEY, String(communityTotal)),
@@ -59,6 +68,9 @@ export const mockMissionService: MissionService = {
       communityTotal,
       target: TARGET,
       completed: communityTotal >= TARGET,
+      accepted,
+      capped: accepted < delta,
+      ceiling: CEILING,
     };
   },
 

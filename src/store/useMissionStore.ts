@@ -4,6 +4,8 @@ import { missionService } from '../services/missionService';
 import type { MissionStats } from '../types/mission';
 import { PENDING_CHANTS_KEY, PENDING_INFLIGHT_KEY } from '../constants/mission';
 import { effectiveChantMax, inputChantMax } from './useChantLimitStore';
+import { chantCeiling, useChantLevelStore } from './useChantLevelStore';
+import { formatNumber } from '../utils/format';
 
 const DEFAULT_COMMUNITY_TARGET = 110000000; // 11 Crore
 
@@ -115,6 +117,9 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
     const epochBefore = flushEpoch;
     try {
       const s = await missionService.getStats();
+      // `mission_stats` repeats the ladder so the very first load already knows
+      // the ceiling, without waiting for the separate app_config fetch.
+      useChantLevelStore.getState().setLevels(s.levels);
       if (flushing || flushEpoch !== epochBefore) {
         // A flush is moving pending chants onto the server RIGHT NOW (or one
         // completed WHILE this getStats was in flight), so the server snapshot
@@ -125,11 +130,15 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
         set({ stats: s, communityTarget: s.communityTarget, loading: false });
       } else {
         // The server total does not yet include locally-pending chants, so add
-        // them back so the on-screen numbers never appear to "drop".
+        // them back so the on-screen numbers never appear to "drop". Clamped to
+        // the ceiling: pending chants queued past it will be refused, and the
+        // next flush corrects the total anyway — no reason to show it too high
+        // in the meantime. (The community total is a sum over every devotee, so
+        // a personal ceiling says nothing about it.)
         const pending = get().pending;
         set({
           stats: s,
-          userCount: s.userCount + pending,
+          userCount: Math.min(s.userCount + pending, s.ceiling),
           communityTotal: s.communityTotal + pending,
           communityTarget: s.communityTarget,
           loading: false,
@@ -147,7 +156,12 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
 
   tap: (n = 1) => {
     if (!Number.isFinite(n) || n <= 0) return;
-    const k = Math.floor(n);
+    // Never count past the ceiling: the server would refuse the surplus anyway,
+    // and an over-count here would leave the on-screen total above what the
+    // server will ever confirm.
+    const room = Math.max(0, chantCeiling() - get().userCount);
+    const k = Math.min(Math.floor(n), room);
+    if (k <= 0) return;
     set(s => ({
       userCount: s.userCount + k,
       communityTotal: s.communityTotal + k,
@@ -166,6 +180,16 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
       set({ error: `You can add at most ${cap.toLocaleString('en-IN')} chants at a time.` });
       throw new Error('over_max');
     }
+    const ceiling = chantCeiling();
+    if (get().userCount >= ceiling) {
+      set({
+        error: `You have completed all ${formatNumber(ceiling)} chants. Hara Hara Mahadeva!`,
+      });
+      throw new Error('at_ceiling');
+    }
+    // Anything over the remaining room is dropped silently — the screens already
+    // cap what can be entered, and `flush()` reports the ceiling from the
+    // server's own answer rather than guessing here.
     get().tap(k); // optimistic + persisted
     void get().flush(); // sync in the background (queues if offline)
   },
@@ -190,8 +214,9 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
           job = { txnId: uuidv4(), chunk: Math.min(get().pending, effectiveChantMax()) };
           await writeInflight(job);
         }
+        let res;
         try {
-          await missionService.addChants(job.chunk, job.txnId);
+          res = await missionService.addChants(job.chunk, job.txnId);
         } catch (e) {
           const msg = e instanceof Error ? e.message : '';
           // A server cap / paused-mission / validation rejection is PERMANENT —
@@ -209,6 +234,23 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
         set(s => ({ pending: Math.max(0, s.pending - job.chunk) }));
         persistPending(get().pending);
         flushEpoch++; // a chunk committed on the server
+
+        if (res.capped) {
+          // The ceiling clipped this chunk, so it will refuse every chunk after
+          // it too. Retrying would spin forever on counts that can never land —
+          // instead trust the server's totals and drop what is left in the
+          // queue, then tell the devotee why the number stopped moving.
+          set({
+            userCount: res.userCount,
+            communityTotal: res.communityTotal,
+            pending: 0,
+            error: `You have completed all ${formatNumber(
+              res.ceiling,
+            )} chants. Hara Hara Mahadeva!`,
+          });
+          persistPending(0);
+          break;
+        }
       }
     } finally {
       flushing = false;

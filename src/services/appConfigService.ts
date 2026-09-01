@@ -1,5 +1,7 @@
 import { getSupabaseClient } from './supabaseClient';
 import { APP_VERSION, PLAY_STORE_URL } from '../config/version';
+import { DEFAULT_LEVELS, ceilingOf, sanitizeLevels } from '../constants/levels';
+import type { ChantLevel } from '../types/mission';
 
 export interface AppConfig {
   /** Latest published version — below this shows an optional update prompt. */
@@ -32,6 +34,10 @@ export interface AppConfig {
     url: string;
     title: string;
   };
+  /** The chant-level ladder, ascending. */
+  levels: ChantLevel[];
+  /** Hard ceiling — the end of the last level. No chants are accepted past it. */
+  chantCeiling: number;
 }
 
 // Ads default to OFF everywhere: an unreachable backend, an older server
@@ -70,11 +76,17 @@ export async function fetchAppConfig(): Promise<AppConfig> {
       chantLimit: DEFAULT_CHANT_LIMIT,
       ads: EMPTY_ADS,
       audio: EMPTY_AUDIO,
+      levels: DEFAULT_LEVELS,
+      chantCeiling: ceilingOf(DEFAULT_LEVELS),
     };
   }
   const { data, error } = await supabase.rpc('app_config');
   if (error) throw new Error(error.message);
   const d = (data ?? {}) as Partial<AppConfig>;
+  // A malformed ladder must never stop a devotee chanting, so it is repaired
+  // rather than rejected; the ceiling always comes from the ladder we settled
+  // on, so the two can't disagree even if the server sent an odd `chantCeiling`.
+  const levels = sanitizeLevels(d.levels);
   return {
     latestVersion: d.latestVersion || APP_VERSION,
     minVersion: d.minVersion || '0.0.0',
@@ -92,5 +104,7 @@ export async function fetchAppConfig(): Promise<AppConfig> {
     // resolve to false, never to a truthy string.
     ads: { ...EMPTY_ADS, ...(d.ads ?? {}), enabled: d.ads?.enabled === true },
     audio: { ...EMPTY_AUDIO, ...(d.audio ?? {}), enabled: d.audio?.enabled === true },
+    levels,
+    chantCeiling: ceilingOf(levels),
   };
 }

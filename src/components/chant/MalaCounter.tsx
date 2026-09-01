@@ -52,7 +52,8 @@ const THREAD_DARK = '#9C7A14';
  * offline-safe via the shared mission store, flushed on a short idle debounce.
  */
 export function MalaCounter() {
-  const { userCount, tap, flush, submitting, unsynced, pending } = useMission();
+  const { userCount, tap, flush, submitting, unsynced, pending, atCeiling } =
+    useMission();
 
   // Display size: never wider than the screen minus the surrounding padding
   // (screen p-4 = 32 + card p-5 = 40 ≈ 72), capped at the 300px design size.
@@ -96,6 +97,10 @@ export function MalaCounter() {
   }, []);
 
   const onTap = () => {
+    // The ceiling is final: swallow the tap rather than animate a bead the
+    // server will never accept. (Reachable when the last bead lands while this
+    // screen is open — the parent swaps the whole card out on the next render.)
+    if (atCeiling) return;
     tap(1);
 
     // If expo-haptics is available in your project, replace this with
@@ -198,13 +203,15 @@ export function MalaCounter() {
       </Animated.View>
 
       <Text className="mb-3 text-sm font-medium text-gray-700">
-        Tap the mala to chant
+        {atCeiling ? 'Every chant is complete 🙏' : 'Tap the mala to chant'}
       </Text>
 
       <Pressable
         onPress={onTap}
+        disabled={atCeiling}
         accessibilityRole="button"
         accessibilityLabel="Count one chant"
+        accessibilityState={{ disabled: atCeiling }}
         accessibilityHint={`Bead ${bead} of ${BEADS_PER_MALA} in this mala`}
       >
         <View style={{ width: SIZE, height: SIZE }} className="items-center justify-center">

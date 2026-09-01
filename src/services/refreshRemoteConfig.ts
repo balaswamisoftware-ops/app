@@ -3,11 +3,13 @@ import { useAdConfigStore } from '../store/useAdConfigStore';
 import { useAudioStore } from '../store/useAudioStore';
 import { useNoticeStore } from '../store/useNoticeStore';
 import { useChantLimitStore } from '../store/useChantLimitStore';
+import { useChantLevelStore } from '../store/useChantLevelStore';
 
 /**
  * Push a fetched app config into every server-driven store (ads, audio, the
- * announcement / mission-pause notice, and the per-submission chant cap). This
- * is what makes an admin change actually appear in the running app.
+ * announcement / mission-pause notice, the per-submission chant cap, and the
+ * chant-level ladder). This is what makes an admin change actually appear in the
+ * running app.
  */
 export function publishRemoteConfig(cfg: AppConfig): void {
   useAdConfigStore.getState().setUnits(cfg.ads);
@@ -17,6 +19,7 @@ export function publishRemoteConfig(cfg: AppConfig): void {
     missionActive: cfg.missionActive,
   });
   useChantLimitStore.getState().setLimit(cfg.chantLimit);
+  useChantLevelStore.getState().setLevels(cfg.levels);
 }
 
 /**

@@ -114,19 +114,20 @@ export function LoginScreen({ navigation }: Props) {
         onPress={onSubmit}
       />
 
-      <View className="mt-6 flex-row flex-wrap items-center justify-center gap-1">
-        <Text className="text-sm text-gray-500">Don't have an account?</Text>
-        <Pressable
-          onPress={() => navigation.navigate('SignUp')}
-          hitSlop={8}
-          disabled={submitting}
+      {/* One Text with a nested link so it WRAPS instead of clipping — a
+          flex-row wraps whole items, not the text inside a single wide item. */}
+      <Text className="mt-6 text-center text-sm text-gray-500">
+        Don't have an account?{' '}
+        <Text
+          className="font-semibold text-primary"
+          onPress={() => {
+            if (!submitting) navigation.navigate('SignUp');
+          }}
           accessibilityRole="link"
         >
-          <Text className="text-sm font-semibold text-primary">
-            Create Account
-          </Text>
-        </Pressable>
-      </View>
+          Create Account
+        </Text>
+      </Text>
     </AuthLayout>
   );
 }

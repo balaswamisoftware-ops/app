@@ -79,8 +79,6 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 // package.json (the same field `src/config/version.ts` re-exports), so a release
 // is bumped in ONE place. `versionCode` stays a manual integer that must
 // increment on every Play upload.
-def appVersionName = new groovy.json.JsonSlurper()
-    .parseText(file("$projectDir/../../package.json").text).version
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -92,8 +90,8 @@ android {
         applicationId "com.srividyapitam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.4.0"
+        versionCode 6
+        versionName "1.5.0"
     }
     signingConfigs {
         debug {

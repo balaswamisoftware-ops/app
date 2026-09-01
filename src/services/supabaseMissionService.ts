@@ -1,6 +1,7 @@
 import type { ChantLog, IncrementResult, MissionStats } from '../types/mission';
 import { getSupabaseClient } from './supabaseClient';
 import type { MissionService } from './missionService';
+import { ceilingOf, sanitizeLevels } from '../constants/levels';
 
 function requireClient() {
   const client = getSupabaseClient();
@@ -18,6 +19,7 @@ export const supabaseMissionService: MissionService = {
     const { data, error } = await supabase.rpc('mission_stats');
     if (error) throw new Error(error.message);
     const d = (data ?? {}) as Partial<MissionStats>;
+    const levels = sanitizeLevels(d.levels);
     return {
       target: d.target ?? DEFAULT_TARGET,
       communityTotal: d.communityTotal ?? 0,
@@ -25,6 +27,9 @@ export const supabaseMissionService: MissionService = {
       userCount: d.userCount ?? 0,
       donationAmount: d.donationAmount ?? DEFAULT_DONATION,
       completed: Boolean(d.completed),
+      levels,
+      // Always derived from the ladder we settled on, so the two can't disagree.
+      ceiling: ceilingOf(levels),
     };
   },
 
@@ -37,12 +42,18 @@ export const supabaseMissionService: MissionService = {
       txn_id: txnId ?? null,
     });
     if (error) throw new Error(error.message);
-    const d = (data ?? {}) as Partial<IncrementResult>;
+    const d = (data ?? {}) as Partial<IncrementResult> & { levels?: unknown };
+    const ceiling = ceilingOf(sanitizeLevels(d.levels));
     return {
       userCount: d.userCount ?? 0,
       communityTotal: d.communityTotal ?? 0,
       target: d.target ?? DEFAULT_TARGET,
       completed: Boolean(d.completed),
+      // A server that predates the ceiling sends neither field; treating the
+      // whole delta as accepted keeps that server behaving exactly as before.
+      accepted: typeof d.accepted === 'number' ? d.accepted : delta,
+      capped: d.capped === true,
+      ceiling: typeof d.ceiling === 'number' && d.ceiling > 0 ? d.ceiling : ceiling,
     };
   },
 

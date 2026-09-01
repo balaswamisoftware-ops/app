@@ -14,16 +14,23 @@ if (__DEV__) {
 }
 
 // Render text at the app's designed size regardless of the device's system
-// "Font size" setting. This UI is pixel-tuned (the fixed 300px SVG mala, the
-// circular gauges, the stat tiles, the Nakshatram dropdown), and a large system
-// font would previously enlarge text up to 1.3x and clip the last word of many
-// labels ("of 108" -> "of", "Total chants" -> "Total", "will sync" -> "will").
-// Fixing font scaling to 1x keeps every layout intact on every device.
-Text.defaultProps = Text.defaultProps || {};
-Text.defaultProps.allowFontScaling = false;
-Text.defaultProps.maxFontSizeMultiplier = 1;
-TextInput.defaultProps = TextInput.defaultProps || {};
-TextInput.defaultProps.allowFontScaling = false;
-TextInput.defaultProps.maxFontSizeMultiplier = 1;
+// "Font size" setting. This UI is pixel-tuned (the fixed SVG mala, circular
+// gauges, stat tiles, dropdowns), and a large system font enlarges text and
+// clips the last word of many labels ("of 108" -> "of", "…to go" -> "…to").
+//
+// NOTE: React 19 IGNORES `defaultProps` on function components, so the old
+// `Text.defaultProps.allowFontScaling = false` did nothing (RN's Text/TextInput
+// are forwardRef function components). We instead override the component's
+// render to force `allowFontScaling` off on every instance — this also reaches
+// NativeWind, which renders the underlying RN Text.
+function forceNoFontScaling(Component) {
+  const original = Component && Component.render;
+  if (typeof original !== 'function') return;
+  Component.render = function (props, ref) {
+    return original.call(this, { ...props, allowFontScaling: false }, ref);
+  };
+}
+forceNoFontScaling(Text);
+forceNoFontScaling(TextInput);
 
 AppRegistry.registerComponent(appName, () => App);
