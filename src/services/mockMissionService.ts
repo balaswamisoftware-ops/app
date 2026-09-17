@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ChantLog, IncrementResult, MissionStats } from '../types/mission';
+import type { ChantLog, IncrementResult, MissionStats, RevertResult } from '../types/mission';
 import { delay, generateId } from '../utils/misc';
 import type { MissionService } from './missionService';
 import { DEFAULT_LEVELS, ceilingOf } from '../constants/levels';
@@ -72,6 +72,28 @@ export const mockMissionService: MissionService = {
       capped: accepted < delta,
       ceiling: CEILING,
     };
+  },
+
+  async revertChants(amount: number): Promise<RevertResult> {
+    await delay(150);
+    const before = await readInt(USER_KEY);
+    if (before === 0) throw new Error('You have no chants to revert');
+    if (amount > before) throw new Error(`You can revert at most ${before} chants`);
+    const userCount = before - amount;
+    const communityTotal = Math.max(0, (await readInt(COMMUNITY_KEY)) - amount);
+    const logs = await readLogs();
+    logs.unshift({
+      id: generateId(),
+      amount: -amount,
+      kind: 'revert',
+      createdAt: new Date().toISOString(),
+    });
+    await Promise.all([
+      AsyncStorage.setItem(USER_KEY, String(userCount)),
+      AsyncStorage.setItem(COMMUNITY_KEY, String(communityTotal)),
+      AsyncStorage.setItem(LOGS_KEY, JSON.stringify(logs.slice(0, 500))),
+    ]);
+    return { userCount, communityTotal, reverted: amount };
   },
 
   async getMyLogs(): Promise<ChantLog[]> {

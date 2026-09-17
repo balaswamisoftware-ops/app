@@ -58,12 +58,23 @@ react {
 }
 
 /**
- * R8/Proguard minification. Turned OFF as a stability hedge: a minified release
- * can strip classes needed at runtime and crash. The Play "R8 optimization"
- * recommendation is optional — stability outweighs the size saving. Re-enable
- * only after confirming crash-free with a full keep-rule pass + smoke test.
+ * R8/Proguard minification. ON.
+ *
+ * It was previously off as a stability hedge, but Play now grades obfuscation:
+ * with R8 off the app measures 1% and Play warns that anything under 25% can
+ * limit visibility and publishing (deadline Feb 2027). The keep-rule pass this
+ * was waiting on is done — see `proguard-rules.pro`, which covers RN core /
+ * Hermes / JNI, native modules and ViewManagers, OkHttp, Reanimated, SVG,
+ * safe-area, image-picker, AdMob, Firebase and AsyncStorage.
+ *
+ * A minified build can still strip something reached only by reflection, and
+ * that NEVER shows in debug — so every release built with this on must be
+ * smoke-tested as a real release AAB before it ships.
+ *
+ * Deliberately NOT paired with `shrinkResources`: it can strip resources looked
+ * up by name at runtime, and one change at a time keeps the suspect list short.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -93,8 +104,8 @@ android {
         applicationId "com.srividyapitam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.7.0"
+        versionCode 9
+        versionName "1.8.0"
     }
     signingConfigs {
         debug {

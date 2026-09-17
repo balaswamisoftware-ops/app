@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Dialog } from '../ui';
 import { formatNumber } from '../../utils/format';
 import { useMission } from '../../hooks/useMission';
+import { useCertificateStore } from '../../store/useCertificateStore';
+import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 /**
  * Celebrates the moment a devotee crosses into a new level.
@@ -16,6 +20,8 @@ import { useMission } from '../../hooks/useMission';
 export function LevelUpDialog() {
   const { level, levelIndex, levelTotal, atCeiling, ceiling, nextLevel } =
     useMission();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const certificates = useCertificateStore(s => s.data);
   // `null` until the first level is observed, so the initial load never fires.
   const seen = useRef<number | null>(null);
   const [reached, setReached] = useState<{
@@ -29,9 +35,19 @@ export function LevelUpDialog() {
     seen.current = levelIndex;
     if (previous === null || levelIndex <= previous) return;
     setReached({ name: level.name, index: levelIndex, final: !nextLevel });
+    // Crossing into a level means the previous one was just completed — its
+    // certificate may now be downloadable, so refresh before they look.
+    void useCertificateStore.getState().load();
   }, [levelIndex, level.name, nextLevel]);
 
   if (!reached) return null;
+
+  // The level just COMPLETED is the one before the level now reached (or the
+  // final level itself once the ceiling is hit). Offer its certificate when the
+  // admin has published one and downloads are on.
+  const completedN = reached.final && atCeiling ? reached.index : reached.index - 1;
+  const completed = certificates?.levels.find(l => l.n === completedN);
+  const offerCertificate = certificates?.enabled === true && completed?.hasCertificate === true;
 
   return (
     <Dialog
@@ -47,7 +63,17 @@ export function LevelUpDialog() {
             )} chants are complete. Hara Hara Mahadeva!`
           : `You are now on Level ${reached.index} of ${levelTotal}. Hara Hara Mahadeva!`
       }
-      actions={[{ label: 'Keep chanting' }]}
+      actions={
+        offerCertificate
+          ? [
+              {
+                label: `View ${completed?.name ?? ''} certificate`.replace('  ', ' '),
+                onPress: () => navigation.navigate('Certificates'),
+              },
+              { label: 'Keep chanting' },
+            ]
+          : [{ label: 'Keep chanting' }]
+      }
     />
   );
 }

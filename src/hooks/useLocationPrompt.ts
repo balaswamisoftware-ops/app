@@ -29,16 +29,17 @@ export function useLocationPrompt() {
         if (settled === APP_VERSION) return;
         if (cancelled) return;
 
-        // Already stored (e.g. shared from Profile) — nothing left to ask.
-        if (await locationService.hasSavedLocation()) {
+        // Already stored AND named — nothing left to do. Checking the resolved
+        // form (not just coordinates) lets a row saved without place names heal
+        // itself: permission is already granted, so this re-save is silent.
+        if (await locationService.hasResolvedLocation()) {
           await AsyncStorage.setItem(KEY, APP_VERSION);
           return;
         }
         if (cancelled) return;
 
-        const shared = await locationService.shareLocation();
         // Saved, or explicitly declined — either way the question is answered.
-        void shared;
+        await locationService.shareLocation();
         await AsyncStorage.setItem(KEY, APP_VERSION);
       } catch {
         // Technical failure: leave the version unmarked so we retry next launch.

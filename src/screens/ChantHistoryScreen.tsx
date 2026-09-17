@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   LayoutAnimation,
@@ -11,14 +11,16 @@ import {
   UIManager,
   View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   ChevronDown,
   ChevronRight,
   Flame,
   History,
   RotateCcw,
+  Undo2,
   UserCog,
+  UsersRound,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -35,6 +37,7 @@ import { colors } from '../constants/theme';
 import { formatDateTime, formatNumber } from '../utils/format';
 import { useChantHistory } from '../hooks/useChantHistory';
 import { useMission } from '../hooks/useMission';
+import { RevertChantsDialog } from '../components/chant/RevertChantsDialog';
 import { AdBanner } from '../components/ads/AdBanner';
 import { FullScreenAdGate } from '../components/ads/FullScreenAdGate';
 import type { ChantLog } from '../types/mission';
@@ -97,6 +100,16 @@ function entryStyle(item: ChantLog): {
   chip: string;
   label: string;
 } {
+  // A group leader's entries read as theirs, not as a portal admin's.
+  if (item.byGroupAdmin && item.isUndo) {
+    return { Icon: Undo2, iconColor: colors.danger, chip: 'bg-red-50', label: 'Undone by group admin' };
+  }
+  if (item.byGroupAdmin && item.kind === 'add') {
+    return { Icon: UsersRound, iconColor: colors.primary, chip: 'bg-primary-light', label: 'Recorded by group admin' };
+  }
+  if (item.kind === 'revert') {
+    return { Icon: RotateCcw, iconColor: colors.danger, chip: 'bg-red-50', label: 'Reverted by you' };
+  }
   if (item.kind === 'reset') {
     return { Icon: RotateCcw, iconColor: colors.danger, chip: 'bg-red-50', label: 'Reset by admin' };
   }
@@ -149,6 +162,31 @@ export function ChantHistoryScreen() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const [showAd, setShowAd] = useState(false);
+  const [revertOpen, setRevertOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // "Revert" sits top-right in the header: a correction, kept out of the way of
+  // the list but always one tap away. Nothing to revert at 0.
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setRevertOpen(true)}
+          disabled={userCount <= 0}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Revert chants"
+          className={`mr-4 flex-row items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 active:bg-gray-100 ${
+            userCount <= 0 ? 'opacity-40' : ''
+          }`}
+        >
+          <RotateCcw size={14} color={colors.danger} />
+          <Text className="text-sm font-semibold text-red-600">Revert</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, userCount]);
 
   // Play the full-screen ad when the history opens (respecting the cooldown).
   useFocusEffect(
@@ -224,6 +262,12 @@ export function ChantHistoryScreen() {
         </View>
       ) : null}
 
+      {notice ? (
+        <View className="mx-4 mb-2">
+          <Banner type="success" message={notice} onDismiss={() => setNotice(null)} />
+        </View>
+      ) : null}
+
       <SectionList
         sections={sections}
         keyExtractor={item => item.id}
@@ -274,6 +318,18 @@ export function ChantHistoryScreen() {
       />
 
       <FullScreenAdGate visible={showAd} onClose={() => setShowAd(false)} />
+
+      {revertOpen && (
+        <RevertChantsDialog
+          currentCount={userCount}
+          onClose={() => setRevertOpen(false)}
+          onReverted={amount => {
+            setRevertOpen(false);
+            setNotice(`Removed ${formatNumber(amount)} chants. It’s recorded below as “Reverted by you”.`);
+            void refresh();
+          }}
+        />
+      )}
     </View>
   );
 }

@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Trash2,
+  Award,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -354,6 +355,14 @@ export function ProfileScreen({ navigation }: Props) {
             <SevaStatusCard />
 
             <LocationCard />
+
+            <Card title="Achievements">
+              <LegalRow
+                icon={Award}
+                label="My certificates"
+                onPress={() => navigation.navigate('Certificates')}
+              />
+            </Card>
 
             <Card title="Legal & Policies">
               <LegalRow

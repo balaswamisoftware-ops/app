@@ -5,17 +5,10 @@ import type { MissionStats } from '../types/mission';
 import { PENDING_CHANTS_KEY, PENDING_INFLIGHT_KEY } from '../constants/mission';
 import { chantCeiling, useChantLevelStore } from './useChantLevelStore';
 import { formatNumber } from '../utils/format';
+import { uuidv4 } from '../utils/uuid';
 
 const DEFAULT_COMMUNITY_TARGET = 110000000; // 11 Crore
 
-/** RFC4122-ish v4 id — an idempotency key for one flush chunk. */
-function uuidv4(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 /** The chunk currently mid-flush, persisted so a retry reuses the same txnId. */
 interface Inflight {
@@ -76,6 +69,12 @@ interface MissionStoreState {
   /** Push any pending chants to the server; safe to call anytime. */
   flush: () => Promise<void>;
   clearError: () => void;
+  /**
+   * Take `amount` chants off the devotee's own total. `txnId` should be created
+   * once per attempt (e.g. when the dialog opens) so pressing OK again after a
+   * lost response can't reduce twice. Resolves to how many were taken off.
+   */
+  revert: (amount: number, txnId: string) => Promise<number>;
   /** Wipe all mission state + the pending queue (call on logout / account switch). */
   reset: () => void;
 }
@@ -253,6 +252,23 @@ export const useMissionStore = create<MissionStoreState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  revert: async (amount, txnId) => {
+    // Chants still queued on this phone aren't on the server yet. Reverting
+    // against the server's older total would refuse a valid amount (or be
+    // applied before chants that were entered earlier), so sync first — and
+    // refuse while anything is still unsynced.
+    await get().flush();
+    if (get().pending > 0) {
+      throw new Error(
+        'Some chants haven’t synced yet. Connect to the internet, then try again.',
+      );
+    }
+    const res = await missionService.revertChants(Math.floor(amount), txnId);
+    flushEpoch++; // a server-side change landed (load()-vs-write race guard)
+    set({ userCount: res.userCount, communityTotal: res.communityTotal });
+    return res.reverted;
+  },
 
   reset: () => {
     // Called on logout / account switch so one devotee's optimistic total and

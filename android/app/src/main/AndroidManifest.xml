@@ -9,6 +9,12 @@
          (Profile → Community Map). Requested at runtime only when they opt in.
          Coarse only — precise location is not needed for the map. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Saving a downloaded certificate to the gallery. Android 10+ saves via
+         MediaStore with no permission, so this is capped at Android 9 (API 28)
+         and never shown on newer devices. No READ_MEDIA_* is needed. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
       android:name=".MainApplication"

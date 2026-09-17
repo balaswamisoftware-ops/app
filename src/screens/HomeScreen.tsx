@@ -7,7 +7,6 @@ import {
   Award,
   Sparkles,
   CheckCircle2,
-  Users,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -20,6 +19,8 @@ import { useLocationPrompt } from '../hooks/useLocationPrompt';
 import { useAuthStore } from '../store/useAuthStore';
 import { AdBanner } from '../components/ads/AdBanner';
 import { LevelCard } from '../components/chant/LevelCard';
+import { CertificateReadyCard } from '../components/certificate/CertificateReadyCard';
+import { useCertificateStore } from '../store/useCertificateStore';
 import { DevotionalAudioCard } from '../components/audio/DevotionalAudioCard';
 import {
   AnnouncementCard,
@@ -107,6 +108,7 @@ export function HomeScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       void mission.refresh();
+      void useCertificateStore.getState().load();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
@@ -210,6 +212,9 @@ export function HomeScreen({ navigation }: Props) {
 
         {/* The level ladder — the near-term goal, above the whole-journey card */}
         <LevelCard />
+
+        {/* A certificate to download sits right under the level it celebrates. */}
+        <CertificateReadyCard onPress={() => navigation.navigate('Certificates')} />
 
         {/* Personal progress — the single source of truth for your numbers */}
         <View className="rounded-2xl border border-gray-100 bg-white p-5">

@@ -149,6 +149,35 @@ export const locationService = {
   },
 
   /**
+   * True when coordinates are stored AND were resolved to a place name.
+   *
+   * A row can hold perfectly good coordinates with no names — it was saved by a
+   * build older than reverse geocoding, or the lookup failed that once (it is
+   * best-effort by design). Such a row would otherwise stay "Unknown" on the
+   * admin map forever, because every path that could re-save it sees the
+   * coordinates and skips. The launch prompt uses this to re-save silently.
+   */
+  async hasResolvedLocation(): Promise<boolean> {
+    const supabase = getSupabaseClient();
+    if (!supabase) return false;
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth?.user?.id;
+    if (!uid) return false;
+    const { data, error } = await supabase
+      .from('devotees')
+      .select('latitude,longitude,country')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (error || !data) return false;
+    return (
+      data.latitude != null &&
+      data.longitude != null &&
+      typeof data.country === 'string' &&
+      data.country.trim().length > 0
+    );
+  },
+
+  /**
    * Ask permission, read the position, resolve the place, save it.
    * Returns false only when the devotee DECLINED permission; every other
    * failure throws so the caller can show it and offer a retry.

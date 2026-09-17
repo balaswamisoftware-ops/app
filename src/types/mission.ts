@@ -53,15 +53,27 @@ export interface IncrementResult {
 }
 
 /** How a chant-history entry was created. */
-export type ChantLogKind = 'add' | 'reset' | 'adjust';
+export type ChantLogKind = 'add' | 'reset' | 'adjust' | 'revert';
 
-/** A single chant-history entry (an add, or an admin reset / adjustment). */
+/** Result of a devotee reverting (reducing) their own count. */
+export interface RevertResult {
+  userCount: number;
+  communityTotal: number;
+  /** Chants actually taken off — 0 when this txnId was already applied. */
+  reverted: number;
+}
+
+/** A single chant-history entry (an add, the devotee's own revert, or an admin reset / adjustment). */
 export interface ChantLog {
   id: string;
   /** Signed delta: positive for adds, negative for a reset/reduction. */
   amount: number;
   kind: ChantLogKind;
   createdAt: string;
+  /** True when a group leader (Devotee Admin) recorded it, not the devotee. */
+  byGroupAdmin?: boolean;
+  /** True when this entry cancels an earlier one (a group leader's undo). */
+  isUndo?: boolean;
 }
 
 /** Convenience: remaining chants, clamped at 0. */

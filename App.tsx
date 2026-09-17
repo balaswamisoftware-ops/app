@@ -13,6 +13,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { getSupabaseClient } from './src/services/supabaseClient';
 import { refreshRemoteConfig } from './src/services/refreshRemoteConfig';
 import { useMissionStore } from './src/store/useMissionStore';
+import { useGroupStore } from './src/store/useGroupStore';
 
 // Initialize AdMob once, guarded so it's a no-op until the native rebuild.
 function initAds() {
@@ -42,6 +43,10 @@ function App() {
         supabase.auth.startAutoRefresh();
         // Retry syncing any chants counted while offline.
         void useMissionStore.getState().flush();
+        // Same for chants a group leader recorded offline, and pick up a
+        // devotee-admin role granted (or suspended) by a portal admin meanwhile.
+        void useGroupStore.getState().flush();
+        void useGroupStore.getState().loadStatus();
         // Re-pull admin settings (chant cap, mission pause, announcement, ads,
         // audio) so changes reflect on reopen — no full app restart needed.
         void refreshRemoteConfig();
@@ -57,11 +62,12 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      {/* Dark status-bar icons across the app. No `backgroundColor` on purpose:
-          on Android 15+ (edge-to-edge) the bar is transparent and content draws
-          behind it (SafeAreaProvider handles the insets). Setting a colour would
-          call the now-deprecated setStatusBarColor API that Play flags. */}
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      {/* Dark status-bar icons across the app. NO `backgroundColor` prop, even
+          "transparent": RN forwards any value to Window.setStatusBarColor(),
+          which is deprecated from API 35 and is what Play's edge-to-edge notice
+          flags. On Android 15+ the bar is transparent and content draws behind
+          it anyway (SafeAreaProvider handles the insets). */}
+      <StatusBar barStyle="dark-content" translucent />
       {/* Cap the app to a phone-width column and centre it — on both phones and
           tablets — so a landscape tablet shows a centred column (Swiggy-style)
           instead of stretching full-width. */}

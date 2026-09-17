@@ -52,6 +52,18 @@
 -keep class com.google.android.datatransport.** { *; }
 -dontwarn com.google.firebase.**
 
+# ── react-native-video (in-app devotional audio, ExoPlayer/media3) ──────────
+-keep class com.brentvatne.** { *; }
+-dontwarn com.brentvatne.**
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+
+# ── Certificates: react-native-view-shot + camera-roll (save to gallery) ────
+-keep class fr.greweb.reactnativeviewshot.** { *; }
+-dontwarn fr.greweb.reactnativeviewshot.**
+-keep class com.reactnativecommunity.cameraroll.** { *; }
+-dontwarn com.reactnativecommunity.cameraroll.**
+
 # ── AsyncStorage ────────────────────────────────────────────────────────────
 -keep class com.reactnativecommunity.asyncstorage.** { *; }
 
